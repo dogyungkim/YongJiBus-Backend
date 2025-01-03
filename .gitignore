@@ -54,4 +54,4 @@ build/
 .gradle/
 .DS_Store
 HELP.md
-    
+.env
