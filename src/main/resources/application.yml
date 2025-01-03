@@ -1,0 +1,12 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: yongjibus
+  config:
+    import: optional:file:.env[.properties]
+
+secrets:
+  open_api_key: ${OPEN_API_KEY}
+
