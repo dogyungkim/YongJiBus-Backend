@@ -40,7 +40,8 @@ public class LocalDayTypeRepository implements DayTypeRepository {
         List<DateInfo> currentMonthDates = IntStream.rangeClosed(1, getLastDayOfMonth())
                 .mapToObj(day -> {
                     LocalDate date = LocalDate.now().withDayOfMonth(day);
-                    return new DateInfo(date, isWeekend(date), null);
+                    boolean isWeekend = isWeekend(date);
+                    return new DateInfo(date, isWeekend, isWeekend ? "주말" : "평일" );
                 })
                 .toList();
 
@@ -83,13 +84,5 @@ public class LocalDayTypeRepository implements DayTypeRepository {
     private boolean isWeekend(LocalDate date) {
         DayOfWeek dayOfWeek = date.getDayOfWeek();
         return dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY;
-    }
-
-    private DateInfo dateToHolidayInfo(LocalDate date){
-        return new DateInfo(
-          date,
-          false,
-                null
-        );
     }
 }

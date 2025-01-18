@@ -1,6 +1,7 @@
 package com.github.dogyungkim.yongjibus.yongjibus;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -10,6 +11,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
+@EnableScheduling
 @SpringBootApplication
 public class YongjibusApplication {
 

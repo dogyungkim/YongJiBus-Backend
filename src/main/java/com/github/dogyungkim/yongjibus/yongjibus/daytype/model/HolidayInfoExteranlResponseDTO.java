@@ -9,6 +9,12 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+
+/**
+ * 공공데이터 포털의 휴일 정보 API 응답을 매핑하기 위한 DTO 클래스들
+ * XML 형식의 응답을 Java 객체로 변환하여 처리
+ */
+
 @Data
 @JacksonXmlRootElement(localName = "response")
 public class HolidayInfoExteranlResponseDTO {

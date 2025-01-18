@@ -41,7 +41,7 @@ public class DayTypeServiceImpl implements DayTypeService {
         dayTypeRepository.setDateData();
 
         String response = fetchHolidayInfoFromAPI();
-        System.out.println("response = " + response);
+        log.info("Holiday data = {}", response);
         XmlMapper xmlMapper = new XmlMapper();
 
         try{
@@ -63,7 +63,7 @@ public class DayTypeServiceImpl implements DayTypeService {
             byte[] response = restClient.get()
                     .uri(uriBuilder -> uriBuilder.path("/getRestDeInfo")
                             .queryParam("solYear", Integer.toString(date.getYear()))
-                            .queryParam("solMonth", String.format("%02d", 2))
+                            .queryParam("solMonth", String.format("%02d", date.getMonthValue()))
                             .queryParam("serviceKey", "{ServiceKey}")
                             .build())
                     .retrieve()
@@ -72,7 +72,6 @@ public class DayTypeServiceImpl implements DayTypeService {
 
             // UTF-8로 명시적 디코딩
             return new String(response, "UTF-8");
-
         } catch (Exception e){
             log.error("Failed to fetch holiday data: {}", e.getMessage(), e);
             return null;
