@@ -1,11 +1,11 @@
-package com.github.dogyungkim.yongjibus.yongjibus.daytype;
+package com.yongjibus.daytype;
 
-import com.github.dogyungkim.yongjibus.yongjibus.daytype.model.DateInfo;
-import com.github.dogyungkim.yongjibus.yongjibus.daytype.service.DayTypeService;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import com.yongjibus.daytype.model.DateInfo;
+import com.yongjibus.daytype.service.DayTypeService;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -13,11 +13,10 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 @SpringBootTest
-public class DayTypeServiceTest {
+public class InMemoryTypeServiceTest {
 
     @Autowired
-    DayTypeService service;
-
+    private DayTypeService service;
 
     @Test
     void getHolidayData(){

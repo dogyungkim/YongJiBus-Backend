@@ -1,11 +1,11 @@
-package com.github.dogyungkim.yongjibus.yongjibus.daytype.controller;
+package com.yongjibus.daytype.controller;
 
-import com.github.dogyungkim.yongjibus.yongjibus.daytype.model.GetDayTypeResponseDTO;
-import com.github.dogyungkim.yongjibus.yongjibus.daytype.service.DayTypeService;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import com.yongjibus.daytype.model.GetDayTypeResponseDTO;
+import com.yongjibus.daytype.service.DayTypeService;
 
 import java.time.LocalDate;
 
@@ -14,8 +14,7 @@ import java.time.LocalDate;
 @RequestMapping("/day")
 public class DayTypeController {
 
-    @Autowired
-    DayTypeService dayTypeService;
+    private final DayTypeService dayTypeService;
 
     @GetMapping
     ResponseEntity<GetDayTypeResponseDTO> getDayType(@RequestParam("date") LocalDate date){

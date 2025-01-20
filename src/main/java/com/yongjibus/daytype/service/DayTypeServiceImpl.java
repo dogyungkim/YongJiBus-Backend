@@ -1,9 +1,10 @@
-package com.github.dogyungkim.yongjibus.yongjibus.daytype.service;
+package com.yongjibus.daytype.service;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.github.dogyungkim.yongjibus.yongjibus.daytype.model.DateInfo;
-import com.github.dogyungkim.yongjibus.yongjibus.daytype.model.HolidayInfoExteranlResponseDTO;
-import com.github.dogyungkim.yongjibus.yongjibus.daytype.repository.DayTypeRepository;
+import com.yongjibus.daytype.model.DateInfo;
+import com.yongjibus.daytype.model.HolidayInfoExternalResponseDTO;
+import com.yongjibus.daytype.repository.DayTypeRepository;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -45,7 +46,7 @@ public class DayTypeServiceImpl implements DayTypeService {
         XmlMapper xmlMapper = new XmlMapper();
 
         try{
-            HolidayInfoExteranlResponseDTO dto = xmlMapper.readValue(response, HolidayInfoExteranlResponseDTO.class);
+            HolidayInfoExternalResponseDTO dto = xmlMapper.readValue(response, HolidayInfoExternalResponseDTO.class);
             dayTypeRepository.setHolidayData(dto.toEntity());
 
         } catch (Exception e) {

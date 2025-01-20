@@ -1,4 +1,4 @@
-package com.github.dogyungkim.yongjibus.yongjibus.daytype.model;
+package com.yongjibus.daytype.model;
 
 import lombok.*;
 

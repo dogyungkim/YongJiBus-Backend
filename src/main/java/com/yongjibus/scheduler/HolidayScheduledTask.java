@@ -1,6 +1,5 @@
-package com.github.dogyungkim.yongjibus.yongjibus.scheduler;
+package com.yongjibus.scheduler;
 
-import com.github.dogyungkim.yongjibus.yongjibus.daytype.service.DayTypeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -8,6 +7,8 @@ import java.time.LocalDateTime;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import com.yongjibus.daytype.service.DayTypeService;
 
 @Component
 @RequiredArgsConstructor

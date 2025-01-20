@@ -1,4 +1,4 @@
-package com.github.dogyungkim.yongjibus.yongjibus.config;
+package com.yongjibus.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

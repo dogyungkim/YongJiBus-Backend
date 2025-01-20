@@ -1,4 +1,4 @@
-package com.github.dogyungkim.yongjibus.yongjibus.daytype.model;
+package com.yongjibus.daytype.model;
 
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
@@ -17,7 +17,7 @@ import java.util.List;
 
 @Data
 @JacksonXmlRootElement(localName = "response")
-public class HolidayInfoExteranlResponseDTO {
+public class HolidayInfoExternalResponseDTO {
     private HolidayInfoResponseHeader header;
     private HolidayInfoResponseBody body;
 
