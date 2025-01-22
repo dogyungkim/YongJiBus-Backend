@@ -28,6 +28,6 @@ public class HolidayScheduledTask {
    @Scheduled(cron = "0 0 6 * * *")
    public void fetchHolidayOnSchedule(){
        log.info("Holiday ScheduledTask started at {}", LocalDateTime.now());
-       service.setHolidayInfo();
+       service.loadHolidayInfo();
    }
 }

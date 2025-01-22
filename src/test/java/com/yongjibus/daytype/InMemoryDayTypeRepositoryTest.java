@@ -1,6 +1,7 @@
 package com.yongjibus.daytype;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -19,6 +20,7 @@ public class InMemoryDayTypeRepositoryTest {
     DayTypeRepository repository;
 
     @Test
+    @DisplayName("날짜가 존재할 때 DateInfo를 반환해야 한다")
     void findByDate_WhenDateExists_ShouldReturnDateInfo() {
         //Given
         repository.setDateData();
@@ -30,19 +32,10 @@ public class InMemoryDayTypeRepositoryTest {
     }
 
     @Test
-    void setDateData_WhenCalled_ShouldInitializeDateInfo() {
-        //Given
-        repository.setDateData();
-        //when
-        DateInfo dayType = repository.findByDate(LocalDate.now());
-        //Then
-        assertThat(dayType).isNotNull();
-        assertThat(dayType).isInstanceOf(DateInfo.class);
-    }
-
-    @Test
+    @DisplayName("레포지토리가 비어 있을 때 예외를 던져야 한다")
     void findByDate_WhenRepositoryIsEmpty_ShouldThrowException() {
         // Given
+        // 1년 뒤의 날짜
         LocalDate today = LocalDate.now().plusYears(1);
 
         // When & Then

@@ -18,6 +18,6 @@ public class DayTypeController {
 
     @GetMapping
     ResponseEntity<GetDayTypeResponseDTO> getDayType(@RequestParam("date") LocalDate date){
-        return ResponseEntity.ok(GetDayTypeResponseDTO.fromEntity(dayTypeService.getDayType(date)));
+        return ResponseEntity.ok(GetDayTypeResponseDTO.fromEntity(dayTypeService.findDayInfo(date)));
     }
 }

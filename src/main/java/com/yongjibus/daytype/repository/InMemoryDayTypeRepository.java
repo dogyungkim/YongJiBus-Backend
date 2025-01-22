@@ -6,6 +6,8 @@ import org.springframework.stereotype.Repository;
 import com.yongjibus.daytype.model.DateInfo;
 import com.yongjibus.exception.DateInfoNotFoundException;
 
+import jakarta.annotation.PostConstruct;
+
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
@@ -18,6 +20,11 @@ public class InMemoryDayTypeRepository implements DayTypeRepository {
 
     // List로 HolidayInfo를 저장
     private static final List<DateInfo> store = new CopyOnWriteArrayList<>();
+
+    @PostConstruct
+    private void init(){
+        setDateData();
+    }
 
     /**
      * 특정 날짜를 기준으로 HolidayInfo를 검색
