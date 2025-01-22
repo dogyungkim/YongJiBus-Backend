@@ -1,8 +1,7 @@
-package com.github.dogyungkim.yongjibus.yongjibus.daytype.model;
+package com.yongjibus.daytype.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.ToString;
 
 import java.time.LocalDate;
 
@@ -17,6 +16,6 @@ public class GetDayTypeResponseDTO {
         return new GetDayTypeResponseDTO(
                 dateInfo.getDate(),
                 dateInfo.isHoliday(),
-                dateInfo.getDateKind() == null ? "평일" : dateInfo.getDateKind());
+                dateInfo.getDateKind());
     }
 }

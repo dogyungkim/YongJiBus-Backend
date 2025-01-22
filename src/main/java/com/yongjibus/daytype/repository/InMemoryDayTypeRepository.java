@@ -1,21 +1,30 @@
-package com.github.dogyungkim.yongjibus.yongjibus.daytype.repository;
+package com.yongjibus.daytype.repository;
 
-import com.github.dogyungkim.yongjibus.yongjibus.daytype.model.DateInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import com.yongjibus.daytype.model.DateInfo;
+import com.yongjibus.exception.DateInfoNotFoundException;
+
+import jakarta.annotation.PostConstruct;
+
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.IntStream;
 
 @Repository
 @RequiredArgsConstructor
-public class LocalDayTypeRepository implements DayTypeRepository {
+public class InMemoryDayTypeRepository implements DayTypeRepository {
 
     // List로 HolidayInfo를 저장
-    private static final List<DateInfo> store = new ArrayList<>();
+    private static final List<DateInfo> store = new CopyOnWriteArrayList<>();
+
+    @PostConstruct
+    private void init(){
+        setDateData();
+    }
 
     /**
      * 특정 날짜를 기준으로 HolidayInfo를 검색
@@ -29,7 +38,7 @@ public class LocalDayTypeRepository implements DayTypeRepository {
                 return dateInfo;
             }
         }
-        return new DateInfo();
+        throw new DateInfoNotFoundException(date.toString());
     }
 
     /**
@@ -40,7 +49,8 @@ public class LocalDayTypeRepository implements DayTypeRepository {
         List<DateInfo> currentMonthDates = IntStream.rangeClosed(1, getLastDayOfMonth())
                 .mapToObj(day -> {
                     LocalDate date = LocalDate.now().withDayOfMonth(day);
-                    return new DateInfo(date, isWeekend(date), null);
+                    boolean isWeekend = isWeekend(date);
+                    return new DateInfo(date, isWeekend, isWeekend ? "주말" : "평일" );
                 })
                 .toList();
 
@@ -83,13 +93,5 @@ public class LocalDayTypeRepository implements DayTypeRepository {
     private boolean isWeekend(LocalDate date) {
         DayOfWeek dayOfWeek = date.getDayOfWeek();
         return dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY;
-    }
-
-    private DateInfo dateToHolidayInfo(LocalDate date){
-        return new DateInfo(
-          date,
-          false,
-                null
-        );
     }
 }

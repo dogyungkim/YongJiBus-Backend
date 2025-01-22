@@ -1,9 +1,9 @@
-package com.github.dogyungkim.yongjibus.yongjibus.daytype.repository;
-
-import com.github.dogyungkim.yongjibus.yongjibus.daytype.model.DateInfo;
+package com.yongjibus.daytype.repository;
 
 import java.time.LocalDate;
 import java.util.List;
+
+import com.yongjibus.daytype.model.DateInfo;
 
 public interface DayTypeRepository {
     DateInfo findByDate(LocalDate date);

@@ -1,4 +1,4 @@
-package com.github.dogyungkim.yongjibus.yongjibus;
+package com.yongjibus;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
