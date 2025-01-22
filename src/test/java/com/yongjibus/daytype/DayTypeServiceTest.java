@@ -14,7 +14,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.MediaType;
 
 import com.yongjibus.daytype.client.HolidayApiClient;
 import com.yongjibus.daytype.model.DateInfo;
@@ -85,11 +84,7 @@ class DayTypeServiceTest {
 
     @Test
     @DisplayName("API 호출 실패시 예외 발생 테스트")
-    void setHolidayInfo_ShouldThrowException_WhenApiFails() {
-        // given
-      
-
-        // then
+    void loadHolidayInfo_ShouldThrowException_WhenApiFails() {
         assertThatThrownBy(() -> dayTypeService.loadHolidayInfo())
             .isInstanceOf(RuntimeException.class)
             .hasMessageContaining("Failed to get holiday data");
