@@ -1,0 +1,18 @@
+package com.yongjibus.exception;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import lombok.extern.slf4j.Slf4j;
+
+@RestControllerAdvice
+@Slf4j
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(DateInfoNotFoundException.class)
+    public ResponseEntity<ExceptionResponse> handleDateInfoNotFoundException(DateInfoNotFoundException e) {
+        log.error("DateInfoNotFoundException: {}", e.getMessage());
+        return ResponseEntity.badRequest().body(new ExceptionResponse(e.getMessage(), "404"));
+    }
+}
