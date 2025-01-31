@@ -3,8 +3,8 @@ package com.yongjibus.daytype.repository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
-import com.yongjibus.daytype.model.DateInfo;
-import com.yongjibus.exception.DateInfoNotFoundException;
+import com.yongjibus.daytype.domain.DateInfo;
+import com.yongjibus.exception.NotFoundException;
 
 import jakarta.annotation.PostConstruct;
 
@@ -38,7 +38,7 @@ public class InMemoryDayTypeRepository implements DayTypeRepository {
                 return dateInfo;
             }
         }
-        throw new DateInfoNotFoundException(date.toString());
+        throw new NotFoundException(date.toString());
     }
 
     /**

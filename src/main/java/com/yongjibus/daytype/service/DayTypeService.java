@@ -3,8 +3,8 @@ package com.yongjibus.daytype.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.yongjibus.daytype.model.DateInfo;
-import com.yongjibus.daytype.model.HolidayInfoExternalResponseDTO;
+import com.yongjibus.daytype.domain.DateInfo;
+import com.yongjibus.daytype.domain.HolidayInfoExternalResponseDTO;
 import com.yongjibus.daytype.repository.DayTypeRepository;
 import com.yongjibus.daytype.client.HolidayApiClient;
 
