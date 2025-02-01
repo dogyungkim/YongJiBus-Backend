@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.ArrayList;
 
 import org.junit.jupiter.api.Test;
@@ -61,7 +62,7 @@ public class ArrivalTimeServiceTest {
                 .build()
         );
         
-        when(arrivalTimeRepository.findByTimeIdAndDate(busId, date)).thenReturn(expectedList);
+        when(arrivalTimeRepository.findByTimeIdAndDate(busId, date)).thenReturn(Optional.of(expectedList));
 
         // when
         List<ArrivalTime> result = arrivalTimeService.getArrivalTime(request);
@@ -80,14 +81,14 @@ public class ArrivalTimeServiceTest {
         int busId = 3;
         GetArrivalTimeRequestDTO request = new GetArrivalTimeRequestDTO(busId, date);
         
-        when(arrivalTimeRepository.findByTimeIdAndDate(busId, date)).thenReturn(new ArrayList<>());
+        when(arrivalTimeRepository.findByTimeIdAndDate(busId, date)).thenReturn(Optional.empty());
 
         // when & then
         NotFoundException exception = assertThrows(NotFoundException.class, 
             () -> arrivalTimeService.getArrivalTime(request));
         
         assertEquals(
-            String.format("버스 ID %d의 %s 도착 시간 정보를 찾을 수 없습니다.", busId, date), 
+            String.format("실제 버스 도착 시간 정보가 없습니다.", busId, date), 
             exception.getMessage()
         );
     }

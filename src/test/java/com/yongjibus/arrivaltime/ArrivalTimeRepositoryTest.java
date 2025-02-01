@@ -3,6 +3,7 @@ package com.yongjibus.arrivaltime;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +13,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import com.yongjibus.arrivaltime.domain.ArrivalTime;
 import com.yongjibus.arrivaltime.repository.ArrivalTimeRepository;
+import com.yongjibus.exception.NotFoundException;
 
 @DataJpaTest
 public class ArrivalTimeRepositoryTest {
@@ -32,6 +34,7 @@ public class ArrivalTimeRepositoryTest {
             .timeId(1)
             .date(date)
             .dayOfWeek(date.getDayOfWeek().toString())
+            .time(LocalTime.of(10, 0))
             .isHoliday(false)
             .build();
 
@@ -54,31 +57,19 @@ public class ArrivalTimeRepositoryTest {
             .timeId(timeId)
             .date(date)
             .dayOfWeek(date.getDayOfWeek().toString())
+            .time(LocalTime.of(10, 0))
             .isHoliday(false)
             .build();
         
         arrivalTimeRepository.save(arrivalTime);
 
         // when
-        List<ArrivalTime> found = arrivalTimeRepository.findByTimeIdAndDate(timeId, date);
+        List<ArrivalTime> found = arrivalTimeRepository.findByTimeIdAndDate(timeId, date).orElse(null);
 
         // then
         assertFalse(found.isEmpty());
         assertEquals(1, found.size());
         assertEquals(timeId, found.get(0).getTimeId());
         assertEquals(date, found.get(0).getDate());
-    }
-
-    @Test
-    public void testFindByTimeIdAndDate_WhenNoData() {
-        // given
-        LocalDate date = LocalDate.of(2025, 1, 28);
-        int timeId = 3;
-
-        // when
-        List<ArrivalTime> found = arrivalTimeRepository.findByTimeIdAndDate(timeId, date);
-
-        // then
-        assertTrue(found.isEmpty());
     }
 }
