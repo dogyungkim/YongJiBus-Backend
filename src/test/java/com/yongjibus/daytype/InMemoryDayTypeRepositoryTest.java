@@ -7,7 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import com.yongjibus.daytype.domain.DateInfo;
 import com.yongjibus.daytype.repository.DayTypeRepository;
-import com.yongjibus.exception.NotFoundException;
+import com.yongjibus.exception.DataNotFoundException;
 
 import java.time.LocalDate;
 
@@ -40,7 +40,7 @@ public class InMemoryDayTypeRepositoryTest {
 
         // When & Then
         assertThatThrownBy(() -> repository.findByDate(today))
-                .isInstanceOf(NotFoundException.class)
+                .isInstanceOf(DataNotFoundException.class)
                 .hasMessageContaining(today.toString());
     }
 }

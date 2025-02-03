@@ -1,6 +1,9 @@
 package com.yongjibus.arrivaltime.service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.time.LocalDate;
 
 import org.springframework.stereotype.Service;
 
@@ -8,7 +11,7 @@ import com.yongjibus.arrivaltime.domain.ArrivalTime;
 import com.yongjibus.arrivaltime.domain.SaveArrivalTimeRequestDTO;
 import com.yongjibus.arrivaltime.domain.GetArrivalTimeRequestDTO;
 import com.yongjibus.arrivaltime.repository.ArrivalTimeRepository;
-import com.yongjibus.exception.NotFoundException;
+import com.yongjibus.exception.DataNotFoundException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,19 +37,34 @@ public class ArrivalTimeService {
             .build());
     }
 
-    public List<ArrivalTime> getAllArrivalTIme() {
-        return arrivalTimeRepository.findAll();
-    }
-
     /**
      * 특정 버스의 특정 날짜 도착 시간 정보를 조회하는 메서드
      * 
      * @param dto 조회할 버스 ID와 날짜 정보를 담은 DTO
      * @return 해당하는 도착 시간 정보 목록
-     * @throws NotFoundException 해당 버스 ID와 날짜에 대한 도착 시간 정보가 없을 경우
+     * @throws DataNotFoundException 해당 버스 ID와 날짜에 대한 도착 시간 정보가 없을 경우
      */
-    public List<ArrivalTime> getArrivalTime(GetArrivalTimeRequestDTO dto) {
-        return arrivalTimeRepository.findByTimeIdAndDate(dto.busId(), dto.date())
-                .orElseThrow(() -> new NotFoundException("실제 버스 도착 시간 정보가 없습니다."));
+    public List<ArrivalTime> getArrivalTimeByBusIdAndDate(GetArrivalTimeRequestDTO dto) {
+        List<ArrivalTime> arrivalTimes = arrivalTimeRepository.findByTimeIdAndDate(dto.busId(), dto.date());
+        if (arrivalTimes.isEmpty()) {
+            throw new DataNotFoundException("실제 버스 도착 시간 정보가 없습니다.");
+        }
+        return arrivalTimes;
+    }
+
+    /**
+     * 특정 날짜의 모든 버스 도착 시간 정보를 버스 ID별로 그룹화하여 조회하는 메서드
+     * 
+     * @param date 조회할 날짜
+     * @return 해당 날짜의 모든 도착 시간 정보를 버스 ID별로 그룹화한 맵
+     * @throws DataNotFoundException 해당 날짜에 대한 도착 시간 정보가 없을 경우
+     */
+    public Map<Integer, List<ArrivalTime>> getArrivalTimesGroupedByBusId(LocalDate date) {
+        List<ArrivalTime> arrivalTimes = arrivalTimeRepository.findByDate(date);
+        if (arrivalTimes.isEmpty()) {
+            throw new DataNotFoundException("해당 날짜에 대한 버스 도착 시간 정보가 없습니다.");
+        }
+        return arrivalTimes.stream()
+                .collect(Collectors.groupingBy(ArrivalTime::getTimeId));
     }
 }

@@ -1,6 +1,5 @@
 package com.yongjibus.arrivaltime.controller;
 
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,9 +14,13 @@ import com.yongjibus.arrivaltime.domain.GetArrivalTimeRequestDTO;
 import java.util.List;
 import java.time.LocalDate;
 import org.springframework.format.annotation.DateTimeFormat;
+
+import com.yongjibus.arrivaltime.domain.ArrivalTime;
 import com.yongjibus.arrivaltime.domain.ArrivalTimeResponseDTO;
+import java.util.Map;
 
 import lombok.RequiredArgsConstructor;
+import com.yongjibus.arrivaltime.domain.ArrivalTimeListResponseDTO;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,19 +29,24 @@ public class ArrivalTimeController {
     private final ArrivalTimeService arrivalTimeService;
 
     @PostMapping("/save")
-    public ResponseEntity<String> saveArrivalTime(@RequestBody SaveArrivalTimeRequestDTO request) {
+    public ResponseEntity<Map<String, String>> saveArrivalTime(@RequestBody SaveArrivalTimeRequestDTO request) {
         arrivalTimeService.saveArrivalTime(request);
-        //return ResponseEntity.ok("Success");
-        return ResponseEntity.status(HttpStatusCode.valueOf(200)).body("Success");
+        return ResponseEntity.ok(Map.of("message", "Success"));
     }
 
     @GetMapping("/{date}")
-    public ResponseEntity<List<ArrivalTimeResponseDTO>> getAllArrivalTime(
+    public ResponseEntity<List<ArrivalTimeListResponseDTO>> getAllArrivalTime(
             @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date){
-        List<ArrivalTimeResponseDTO> response = arrivalTimeService.getAllArrivalTIme()
-                .stream()
-                .map(ArrivalTimeResponseDTO::from)
+                
+        Map<Integer, List<ArrivalTime>> arrivalTimesGroupedByBusId = arrivalTimeService.getArrivalTimesGroupedByBusId(date);
+        
+        List<ArrivalTimeListResponseDTO> response = arrivalTimesGroupedByBusId.entrySet().stream()
+                .map(entry -> ArrivalTimeListResponseDTO.from(
+                        entry.getKey(),
+                        entry.getValue()
+                ))
                 .toList();
+        
         return ResponseEntity.ok(response);
     }
 
@@ -48,7 +56,7 @@ public class ArrivalTimeController {
         @PathVariable int busId) {
             
         GetArrivalTimeRequestDTO request = new GetArrivalTimeRequestDTO(busId, date);
-        List<ArrivalTimeResponseDTO> response = arrivalTimeService.getArrivalTime(request)
+        List<ArrivalTimeResponseDTO> response = arrivalTimeService.getArrivalTimeByBusIdAndDate(request)
             .stream()
             .map(ArrivalTimeResponseDTO::from)
             .toList();

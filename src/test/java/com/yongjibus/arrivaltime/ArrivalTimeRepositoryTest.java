@@ -13,7 +13,6 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import com.yongjibus.arrivaltime.domain.ArrivalTime;
 import com.yongjibus.arrivaltime.repository.ArrivalTimeRepository;
-import com.yongjibus.exception.NotFoundException;
 
 @DataJpaTest
 public class ArrivalTimeRepositoryTest {
@@ -64,12 +63,46 @@ public class ArrivalTimeRepositoryTest {
         arrivalTimeRepository.save(arrivalTime);
 
         // when
-        List<ArrivalTime> found = arrivalTimeRepository.findByTimeIdAndDate(timeId, date).orElse(null);
+        List<ArrivalTime> found = arrivalTimeRepository.findByTimeIdAndDate(timeId, date);
 
         // then
         assertFalse(found.isEmpty());
         assertEquals(1, found.size());
         assertEquals(timeId, found.get(0).getTimeId());
         assertEquals(date, found.get(0).getDate());
+    }
+
+    @Test
+    public void testFindByDate_ShouldReturnGroupedData() {
+        // given
+        LocalDate date = LocalDate.of(2025, 1, 28);
+        int busId1 = 1;
+        int busId2 = 2;
+        
+        ArrivalTime arrivalTime1 = ArrivalTime.builder()
+            .timeId(busId1)
+            .date(date)
+            .dayOfWeek(date.getDayOfWeek().toString())
+            .time(LocalTime.of(10, 0))
+            .isHoliday(false)
+            .build();
+        
+        ArrivalTime arrivalTime2 = ArrivalTime.builder()
+            .timeId(busId2)
+            .date(date)
+            .dayOfWeek(date.getDayOfWeek().toString())
+            .time(LocalTime.of(11, 0))
+            .isHoliday(false)
+            .build();
+        
+        arrivalTimeRepository.save(arrivalTime1);
+        arrivalTimeRepository.save(arrivalTime2);
+
+        // when
+        List<ArrivalTime> found = arrivalTimeRepository.findByDate(date);
+
+        // then
+        assertFalse(found.isEmpty());
+        assertEquals(2, found.size());
     }
 }
