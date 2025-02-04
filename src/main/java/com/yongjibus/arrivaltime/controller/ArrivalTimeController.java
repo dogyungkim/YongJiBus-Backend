@@ -36,7 +36,7 @@ public class ArrivalTimeController {
 
     @GetMapping("/{date}")
     public ResponseEntity<List<ArrivalTimeListResponseDTO>> getAllArrivalTime(
-            @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date){
+            @PathVariable("date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date){
                 
         Map<Integer, List<ArrivalTime>> arrivalTimesGroupedByBusId = arrivalTimeService.getArrivalTimesGroupedByBusId(date);
         
@@ -52,11 +52,10 @@ public class ArrivalTimeController {
 
     @GetMapping("/{date}/{busId}")
     public ResponseEntity<List<ArrivalTimeResponseDTO>> getArrivalTime(
-        @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
-        @PathVariable int busId) {
-            
+        @PathVariable("date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
+        @PathVariable("busId") int busId) {
         GetArrivalTimeRequestDTO request = new GetArrivalTimeRequestDTO(busId, date);
-        List<ArrivalTimeResponseDTO> response = arrivalTimeService.getArrivalTimeByBusIdAndDate(request)
+        List<ArrivalTimeResponseDTO> response = arrivalTimeService.getFiveArrivalTimeByBusIdAndDate(request)
             .stream()
             .map(ArrivalTimeResponseDTO::from)
             .toList();

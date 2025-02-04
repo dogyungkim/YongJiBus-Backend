@@ -38,7 +38,7 @@ public class ArrivalTimeService {
     }
 
     /**
-     * 특정 버스의 특정 날짜 도착 시간 정보를 조회하는 메서드
+     * 특정 날짜의 특정 버스의 도착 시간 정보를 조회하는 메서드
      * 
      * @param dto 조회할 버스 ID와 날짜 정보를 담은 DTO
      * @return 해당하는 도착 시간 정보 목록
@@ -46,10 +46,26 @@ public class ArrivalTimeService {
      */
     public List<ArrivalTime> getArrivalTimeByBusIdAndDate(GetArrivalTimeRequestDTO dto) {
         List<ArrivalTime> arrivalTimes = arrivalTimeRepository.findByTimeIdAndDate(dto.busId(), dto.date());
+        log.info("arrivalTimes: {}", arrivalTimes);
         if (arrivalTimes.isEmpty()) {
             throw new DataNotFoundException("실제 버스 도착 시간 정보가 없습니다.");
         }
         return arrivalTimes;
+    }
+
+    /**
+     * 특정 버스 ID와 날짜에 대한 최근 5개의 도착 시간 정보를 조회하는 메서드
+     * 
+     * @param dto 조회할 버스 ID와 날짜 정보를 담은 DTO
+     * @return 해당하는 최근 5개의 도착 시간 정보 목록
+     * @throws DataNotFoundException 해당 버스 ID와 날짜에 대한 도착 시간 정보가 없을 경우
+     */
+    public List<ArrivalTime> getFiveArrivalTimeByBusIdAndDate(GetArrivalTimeRequestDTO dto) {
+        List<ArrivalTime> arrivalTimes = arrivalTimeRepository.findTop5ByTimeIdAndDateOrderByTimeDesc(dto.busId(), dto.date());
+        if (arrivalTimes.isEmpty()) {
+            throw new DataNotFoundException("실제 버스 도착 시간 정보가 없습니다.");
+        }
+        return arrivalTimes.stream().limit(5).toList();
     }
 
     /**

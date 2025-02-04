@@ -12,7 +12,7 @@ public record ArrivalTimeListResponseDTO(
         return new ArrivalTimeListResponseDTO(
             busId,
             arrivalTimes.stream()
-            .map(arrivalTime -> formatter.format(arrivalTime.getTime()))
+            .map(arrivalTime -> arrivalTime.getTime().format(formatter))
             .toList()
         );  
     }
