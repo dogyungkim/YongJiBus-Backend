@@ -1,4 +1,4 @@
-package com.yongjibus.daytype.model;
+package com.yongjibus.daytype.domain;
 
 import lombok.*;
 
@@ -6,6 +6,7 @@ import java.time.LocalDate;
 
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @Getter
 @Setter
 @ToString

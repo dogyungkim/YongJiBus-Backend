@@ -1,4 +1,4 @@
-package com.yongjibus.daytype.model;
+package com.yongjibus.daytype.domain;
 
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;

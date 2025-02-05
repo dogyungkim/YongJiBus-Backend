@@ -3,7 +3,7 @@ package com.yongjibus.daytype.repository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
-import com.yongjibus.daytype.model.DateInfo;
+import com.yongjibus.daytype.domain.DateInfo;
 import com.yongjibus.exception.DateInfoNotFoundException;
 
 import jakarta.annotation.PostConstruct;

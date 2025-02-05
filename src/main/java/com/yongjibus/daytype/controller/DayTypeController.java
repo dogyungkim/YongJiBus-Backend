@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.yongjibus.daytype.model.GetDayTypeResponseDTO;
+import com.yongjibus.daytype.domain.GetDayTypeResponseDTO;
 import com.yongjibus.daytype.service.DayTypeService;
 
 import java.time.LocalDate;

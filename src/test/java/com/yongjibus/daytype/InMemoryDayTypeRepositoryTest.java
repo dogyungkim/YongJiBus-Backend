@@ -5,7 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import com.yongjibus.daytype.model.DateInfo;
+import com.yongjibus.daytype.domain.DateInfo;
 import com.yongjibus.daytype.repository.DayTypeRepository;
 import com.yongjibus.exception.DateInfoNotFoundException;
 
