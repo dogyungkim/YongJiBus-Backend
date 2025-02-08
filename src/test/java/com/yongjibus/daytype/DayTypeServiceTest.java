@@ -16,7 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.yongjibus.daytype.client.HolidayApiClient;
-import com.yongjibus.daytype.model.DateInfo;
+import com.yongjibus.daytype.domain.DateInfo;
 import com.yongjibus.daytype.repository.DayTypeRepository;
 import com.yongjibus.daytype.service.DayTypeService;
 

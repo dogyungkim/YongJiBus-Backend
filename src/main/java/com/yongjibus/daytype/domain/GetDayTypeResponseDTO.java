@@ -1,4 +1,4 @@
-package com.yongjibus.daytype.model;
+package com.yongjibus.daytype.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

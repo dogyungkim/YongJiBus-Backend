@@ -3,25 +3,28 @@ package com.yongjibus.daytype.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.yongjibus.daytype.model.DateInfo;
-import com.yongjibus.daytype.model.HolidayInfoExternalResponseDTO;
 import com.yongjibus.daytype.repository.DayTypeRepository;
 import com.yongjibus.daytype.client.HolidayApiClient;
+import com.yongjibus.daytype.domain.DateInfo;
+import com.yongjibus.daytype.domain.HolidayInfoExternalResponseDTO;
+import com.yongjibus.vacation.service.VacationService;
 
 import jakarta.annotation.PostConstruct;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Service
 @Slf4j
 public class DayTypeService {
 
     private final HolidayApiClient holidayApiClient;
     private final DayTypeRepository dayTypeRepository;
+    private final VacationService vacationService;
 
     @PostConstruct
     private void init(){
@@ -31,9 +34,16 @@ public class DayTypeService {
     /**
      * 해당 날짜가 공휴일인지 확인하는 메서드
      * @param date 확인할 날짜
-     * @return boolean 공휴일 여부
+     * @return DateInfo 날짜 정보
      */
     public DateInfo findDayInfo(LocalDate date) {
+        if(vacationService.isVacation(date)) {
+            return DateInfo.builder()
+                .date(date)
+                .isHoliday(true)
+                .dateKind("방학")
+                .build();
+        }
         return dayTypeRepository.findByDate(date);
     }
 
