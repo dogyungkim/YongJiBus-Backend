@@ -19,7 +19,6 @@ import java.util.stream.IntStream;
 @RequiredArgsConstructor
 public class InMemoryDayTypeRepository implements DayTypeRepository {
 
-    // List로 HolidayInfo를 저장
     private static final List<DateInfo> store = new CopyOnWriteArrayList<>();
 
     @PostConstruct
@@ -45,7 +44,6 @@ public class InMemoryDayTypeRepository implements DayTypeRepository {
     /**
      * 현재 월의 날짜 데이터를 메모리에 저장
      */
-    @Transactional
     @Override
     public void setDateData() {
         List<DateInfo> currentMonthDates = IntStream.rangeClosed(1, getLastDayOfMonth())
@@ -64,7 +62,6 @@ public class InMemoryDayTypeRepository implements DayTypeRepository {
      * 공휴일 데이터를 List에 저장
      * @param dateInfoList 저장할 HolidayInfo 리스트
      */
-    @Transactional
     @Override
     public void setHolidayData(List<DateInfo> dateInfoList) {
         int storeSize = store.size();

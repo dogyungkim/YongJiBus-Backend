@@ -48,7 +48,7 @@ public class DayTypeService {
             HolidayInfoExternalResponseDTO dto = parseHolidayXmlResponse(response);
             dayTypeRepository.setHolidayData(dto.toEntity());
         } catch (Exception e) {
-            throw new RuntimeException("Failed to get holiday data" + e.getMessage());
+            throw new RuntimeException("Failed to get holiday data");
         }
     }
 
