@@ -1,4 +1,4 @@
-package com.yongjibus.config.cache;
+package com.yongjibus.global.config.cache;
 
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;

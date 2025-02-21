@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import com.yongjibus.daytype.domain.DateInfo;
-import com.yongjibus.exception.DateInfoNotFoundException;
+import com.yongjibus.global.exception.DateInfoNotFoundException;
 
 import jakarta.annotation.PostConstruct;
 

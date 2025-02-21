@@ -1,4 +1,4 @@
-package com.yongjibus.exception;
+package com.yongjibus.global.exception;
 
 public class DateInfoNotFoundException extends RuntimeException {
     public DateInfoNotFoundException(String message) {

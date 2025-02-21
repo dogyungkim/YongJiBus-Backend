@@ -1,21 +1,16 @@
 package com.yongjibus.daytype.domain;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 import java.time.LocalDate;
 
-@AllArgsConstructor
-@Getter
-public class GetDayTypeResponseDTO {
-    private LocalDate date;
-    private boolean isHoliday;
-    private String dateKind;
-
-    public static GetDayTypeResponseDTO fromEntity(DateInfo dateInfo){
+public record GetDayTypeResponseDTO(
+    LocalDate date,
+    boolean isHoliday,
+    String dateKind
+) {
+    public static GetDayTypeResponseDTO fromEntity(DateInfo dateInfo) {
         return new GetDayTypeResponseDTO(
-                dateInfo.getDate(),
-                dateInfo.isHoliday(),
-                dateInfo.getDateKind());
+            dateInfo.getDate(),
+            dateInfo.isHoliday(),
+            dateInfo.getDateKind());
     }
 }

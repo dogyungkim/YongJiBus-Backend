@@ -7,7 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import com.yongjibus.daytype.domain.DateInfo;
 import com.yongjibus.daytype.repository.DayTypeRepository;
-import com.yongjibus.exception.DateInfoNotFoundException;
+import com.yongjibus.global.exception.DateInfoNotFoundException;
 
 import java.time.LocalDate;
 
