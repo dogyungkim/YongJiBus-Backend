@@ -1,8 +1,6 @@
 package com.yongjibus.global;
 
-    import org.springframework.http.ResponseEntity;
-
-import com.yongjibus.global.exception.ErrorCode;
+import org.springframework.http.ResponseEntity;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +18,7 @@ public class ApiResponse<T> {
 
     // 실패 응답
     public static ResponseEntity<ApiResponse<String>> error(int code, String message) {
-        return ResponseEntity.status(code)
+        return ResponseEntity.badRequest()
                 .body(new ApiResponse<>(code, message));
     }
 }

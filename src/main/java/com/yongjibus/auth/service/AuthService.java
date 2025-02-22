@@ -1,5 +1,6 @@
 package com.yongjibus.auth.service;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,7 +21,7 @@ public class AuthService {
     private final AuthRepository authRepository;
     private final EmailService emailService;
     private final EmailTokenRedisService emailTokenRedisService;
-
+    private final PasswordEncoder passwordEncoder;
     /**
      * 이메일 인증 코드를 생성하고 발송합니다.
      * 
@@ -61,7 +62,7 @@ public class AuthService {
         Member member = authRepository.findByEmail(email)
             .orElseThrow(() -> new AuthException(ErrorCode.INVALID_CREDENTIALS));
 
-        if (!member.getPassword().equals(password)) {
+        if (!passwordEncoder.matches(password, member.getPassword())) {
             throw new AuthException(ErrorCode.INVALID_CREDENTIALS);
         }
     }
@@ -77,7 +78,13 @@ public class AuthService {
         validateDuplicateEmail(member.getEmail());
         validateDuplicateUsername(member.getUsername());
 
-        authRepository.save(member);
+        Member newMember = Member.builder()
+            .email(member.getEmail())
+            .password(passwordEncoder.encode(member.getPassword()))
+            .username(member.getUsername())
+            .build();
+
+        authRepository.save(newMember);
     }
 
     private void validateEmailVerification(String email) {
