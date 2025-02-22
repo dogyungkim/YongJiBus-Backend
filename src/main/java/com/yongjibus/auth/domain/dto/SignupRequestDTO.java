@@ -21,7 +21,7 @@ public record SignupRequestDTO(
     String name,
 
     @NotBlank
-    @Length(min = 2, max = 10, message = "아이디는 2자 이상 10자 이하여야 합니다.")
+    @Length(min = 2, max = 10, message = "닉네임은 2자 이상 10자 이하여야 합니다.")
     String username
 ) {
     public Member toEntity() {

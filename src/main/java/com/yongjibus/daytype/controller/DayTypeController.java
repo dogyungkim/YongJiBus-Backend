@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.yongjibus.daytype.domain.GetDayTypeResponseDTO;
 import com.yongjibus.daytype.service.DayTypeService;
+import com.yongjibus.global.ApiResponse;
 
 import java.time.LocalDate;
 
@@ -17,7 +18,7 @@ public class DayTypeController {
     private final DayTypeService dayTypeService;
 
     @GetMapping
-    ResponseEntity<GetDayTypeResponseDTO> getDayType(@RequestParam("date") LocalDate date){
-        return ResponseEntity.ok(GetDayTypeResponseDTO.fromEntity(dayTypeService.findDayInfo(date)));
+    ResponseEntity<ApiResponse<GetDayTypeResponseDTO>> getDayType(@RequestParam("date") LocalDate date){
+        return ApiResponse.success(GetDayTypeResponseDTO.fromEntity(dayTypeService.findDayInfo(date)));
     }
 }

@@ -1,10 +1,11 @@
 package com.yongjibus.global.exception;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import com.yongjibus.global.ApiResponse;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -13,27 +14,25 @@ import lombok.extern.slf4j.Slf4j;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(DateInfoNotFoundException.class)
-    public ResponseEntity<ExceptionResponse> handleNotFoundException(DateInfoNotFoundException e) {
+    public ResponseEntity<ApiResponse<String>> handleNotFoundException(DateInfoNotFoundException e) {
         log.error("DateInfoNotFoundException: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ExceptionResponse(e.getMessage(),404));
+        return ApiResponse.error(e.getErrorCode().getStatus().value(), e.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ExceptionResponse> handleValidationExceptions(MethodArgumentNotValidException e) {
+    public ResponseEntity<ApiResponse<String>> handleValidationExceptions(MethodArgumentNotValidException e) {
         String errorMessage = e.getBindingResult()
                 .getAllErrors()
                 .get(0)
                 .getDefaultMessage();
         log.error("MethodArgumentNotValidException: {}", errorMessage);
-        return ResponseEntity.badRequest().body(new ExceptionResponse(errorMessage, 400));
+        return ApiResponse.error(ErrorCode.INVALID_DATE_FORMAT.getStatus().value(), errorMessage);
     }
 
     @ExceptionHandler(AuthException.class)
-    public ResponseEntity<ExceptionResponse> handleAuthException(AuthException e) {
+    public ResponseEntity<ApiResponse<String>> handleAuthException(AuthException e) {
         log.error("AuthException: {}", e.getMessage());
-        return ResponseEntity.status(e.getErrorCode().getStatus())
-                .body(new ExceptionResponse(e.getMessage(), e.getErrorCode().getStatus().value()));
+        return ApiResponse.error(e.getErrorCode().getStatus().value(), e.getMessage());
     }
 }
 

@@ -41,7 +41,7 @@ public class AuthService {
      * @param authCode 사용자가 입력한 인증 코드
      * @return 인증 성공 여부
      */
-    public boolean verifyAuthCode(String email, String authCode) {
+    public void verifyAuthCode(String email, String authCode) {
         String storedAuthCode = emailTokenRedisService.getAuthCode(email);
         log.info("인증 이메일 : {}, 인증 코드 : {}", email, storedAuthCode);
 
@@ -52,10 +52,9 @@ public class AuthService {
         if (authCode.equals(storedAuthCode)) {
             emailTokenRedisService.deleteAuthCode(email);
             emailTokenRedisService.setVerified(email);
-            return true;
+        } else {
+            throw new AuthException(ErrorCode.INVALID_AUTH_CODE);
         }
-
-        return false;   
     }
     
     public void login(String email, String password) {
