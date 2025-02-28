@@ -3,6 +3,7 @@ package com.yongjibus.auth.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,7 +13,10 @@ import com.yongjibus.auth.domain.dto.EmailAuthCodeRequestDTO;
 import com.yongjibus.auth.domain.dto.EmailVerifyRequestDTO;
 import com.yongjibus.auth.domain.dto.LoginRequestDTO;
 import com.yongjibus.auth.domain.dto.SignupRequestDTO;
-import com.yongjibus.auth.domain.dto.SignupResponseDTO;
+import com.yongjibus.auth.domain.dto.TokenRefreshRequestDTO;
+import com.yongjibus.auth.domain.Member;
+import com.yongjibus.auth.domain.MemberDetail;
+import com.yongjibus.auth.domain.dto.AuthTokenDTO;
 import com.yongjibus.auth.service.AuthService;
 import com.yongjibus.global.ApiResponse;
 
@@ -42,16 +46,42 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<SignupResponseDTO>> signup(@Valid @RequestBody SignupRequestDTO dto) {
+    public ResponseEntity<ApiResponse<AuthTokenDTO>> signup(@Valid @RequestBody SignupRequestDTO dto) {
 
         List<String> tokens = authService.signup(dto.toEntity());
         
-        return ApiResponse.success(new SignupResponseDTO(tokens.get(0), tokens.get(1)));
+        return ApiResponse.success(new AuthTokenDTO(tokens.get(0), tokens.get(1)));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<String>> login(@Valid @RequestBody LoginRequestDTO dto) {
-        authService.login(dto.email(), dto.password());
-        return ApiResponse.success("로그인이 완료되었습니다.");
+    public ResponseEntity<ApiResponse<AuthTokenDTO>> login(@Valid @RequestBody LoginRequestDTO dto) {
+        AuthTokenDTO tokenResponse = authService.login(dto.email(), dto.password());
+        return ApiResponse.success(tokenResponse);
     }
+    
+    @PostMapping("/token/refresh")
+    public ResponseEntity<ApiResponse<AuthTokenDTO>> refreshAccessToken(@Valid @RequestBody TokenRefreshRequestDTO dto) {
+        AuthTokenDTO tokenResponse = authService.refreshAccessToken(dto.refreshToken());
+        return ApiResponse.success(tokenResponse);
+    }
+    
+    // @PostMapping("/token/rotate")
+    // public ResponseEntity<ApiResponse<AuthTokenDTO>> refreshAllTokens(@Valid @RequestBody TokenRefreshRequestDTO dto) {
+    //     AuthTokenDTO tokenResponse = authService.refreshAllTokens(dto.refreshToken());
+    //     return ApiResponse.success(tokenResponse);
+    // }
+    
+    /**
+     * 사용자 로그아웃을 처리합니다.
+     * RefreshToken을 무효화하여 로그아웃 처리합니다.
+     * 
+     * @param dto 로그아웃 요청 DTO (RefreshToken 포함)
+     * @return 로그아웃 성공 메시지
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<String>> logout(@AuthenticationPrincipal MemberDetail memberDetail) {
+        authService.logout(memberDetail.getMember());
+        return ApiResponse.success("로그아웃이 완료되었습니다.");
+    }
+    
 }

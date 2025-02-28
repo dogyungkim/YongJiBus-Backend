@@ -32,7 +32,7 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String path = request.getRequestURI();
-        if (path.startsWith("/auth/")) {
+        if (path.startsWith("/auth/") && !path.startsWith("/auth/logout")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -40,7 +40,6 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
         // 1. 토큰 유효성 검증
         log.info("JwtAuthenticationProcessingFilter doFilterInternal");
         String accessToken = jwtService.extractToken(request)
-            .filter(jwtService::validateToken)
             .orElse(null);
 
         // 2. 토큰 유효성 검증

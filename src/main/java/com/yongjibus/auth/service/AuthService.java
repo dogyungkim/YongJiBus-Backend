@@ -7,11 +7,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.yongjibus.auth.domain.Member;
+import com.yongjibus.auth.domain.dto.AuthTokenDTO;
 import com.yongjibus.auth.repository.MemberRepository;
 import com.yongjibus.global.exception.AuthException;
 import com.yongjibus.global.exception.ErrorCode;
 import com.yongjibus.global.jwt.JwtService;
 import com.yongjibus.global.redis.EmailTokenRedisService;
+import com.yongjibus.global.redis.JwtRedisService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +28,7 @@ public class AuthService {
     private final EmailTokenRedisService emailTokenRedisService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final JwtRedisService jwtRedisService;
 
     /**
      * 이메일 인증 코드를 생성하고 발송합니다.
@@ -69,15 +72,22 @@ public class AuthService {
      * 
      * @param email 로그인할 사용자의 이메일
      * @param password 로그인할 사용자의 비밀번호
+     * @return 발급된 AccessToken과 RefreshToken
      * @throws AuthException 이메일이 존재하지 않거나 비밀번호가 일치하지 않을 경우
      */
-    public void login(String email, String password) {
+    public AuthTokenDTO login(String email, String password) {
         Member member = authRepository.findByEmail(email)
             .orElseThrow(() -> new AuthException(ErrorCode.INVALID_CREDENTIALS));
 
         if (!passwordEncoder.matches(password, member.getPassword())) {
             throw new AuthException(ErrorCode.INVALID_CREDENTIALS);
         }
+        
+        // 토큰 발급
+        String accessToken = jwtService.createAccessToken(email);
+        String refreshToken = jwtService.createAndSaveRefreshToken(email);
+        
+        return new AuthTokenDTO(accessToken, refreshToken);
     }
 
     /**
@@ -122,5 +132,44 @@ public class AuthService {
         if (authRepository.existsByUsername(username)) {
             throw new AuthException(ErrorCode.USERNAME_ALREADY_EXISTS);
         }
+    }
+
+    /**
+     * RefreshToken을 사용하여 AccessToken을 재발행합니다.
+     * 
+     * @param refreshToken 사용자의 RefreshToken
+     * @return 새로 발급된 AccessToken
+     * @throws AuthException RefreshToken이 유효하지 않을 경우
+     */
+    public AuthTokenDTO refreshAccessToken(String refreshToken) {
+        if (!jwtService.validateToken(refreshToken)) {
+            throw new AuthException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        if (jwtService.isTokenExpired(refreshToken)) {
+            throw new AuthException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+        
+        String email = jwtService.getEmailFromToken(refreshToken);
+        String newAccessToken = jwtService.createAccessToken(email);
+        
+        return new AuthTokenDTO(newAccessToken, null);
+    }
+
+    /**
+     * 사용자 로그아웃을 처리합니다.
+     * RefreshToken을 무효화하여 로그아웃 처리합니다.
+     * 
+     * @param refreshToken 무효화할 RefreshToken
+     * @throws AuthException RefreshToken이 유효하지 않을 경우
+     */
+    public void logout(Member member) {
+
+        // Redis에서 RefreshToken 삭제
+        jwtRedisService.deleteRefreshToken(member.getEmail());
+
+        member.delete();
+        
+        authRepository.save(member);
     }
 }

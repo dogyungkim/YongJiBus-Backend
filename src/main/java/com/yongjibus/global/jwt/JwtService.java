@@ -48,6 +48,18 @@ public class JwtService {
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
+    /**
+     * Refresh 토큰을 생성하고 Redis에 저장합니다.
+     * 
+     * @param email 사용자 이메일
+     * @return 생성된 Refresh 토큰
+     */
+    public String createAndSaveRefreshToken(String email) {
+        String refreshToken = createRefreshToken();
+        jwtRedisService.setRefreshToken(email, refreshToken);
+        return refreshToken;
+    }
+
     public String createAccessToken(String email) {
 		Date now = new Date();
 
@@ -67,18 +79,6 @@ public class JwtService {
             .setExpiration(new Date(now.getTime() + refreshTokenExpirationPeriod))
             .signWith(key, SignatureAlgorithm.HS256)
             .compact();
-    }
-    
-    /**
-     * Refresh 토큰을 생성하고 Redis에 저장합니다.
-     * 
-     * @param email 사용자 이메일
-     * @return 생성된 Refresh 토큰
-     */
-    public String createAndSaveRefreshToken(String email) {
-        String refreshToken = createRefreshToken();
-        jwtRedisService.setRefreshToken(email, refreshToken);
-        return refreshToken;
     }
     
     /**
