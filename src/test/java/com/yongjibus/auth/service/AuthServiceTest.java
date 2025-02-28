@@ -22,6 +22,7 @@ import com.yongjibus.auth.domain.Member;
 import com.yongjibus.auth.repository.MemberRepository;
 import com.yongjibus.global.exception.AuthException;
 import com.yongjibus.global.exception.ErrorCode;
+import com.yongjibus.global.jwt.JwtService;
 import com.yongjibus.global.redis.EmailTokenRedisService;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,17 +43,21 @@ class AuthServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private JwtService jwtService;
+
     private Member testMember;
     private final String TEST_EMAIL = "test@example.com";
     private final String TEST_PASSWORD = "password123";
     private final String TEST_USERNAME = "testuser";
-
+    private final String TEST_NAME = "테스트유저";
     @BeforeEach
     void setUp() {
         testMember = Member.builder()
                 .email(TEST_EMAIL)
                 .password(TEST_PASSWORD)
                 .username(TEST_USERNAME)
+                .name(TEST_NAME)
                 .build();
     }
 
@@ -118,6 +123,8 @@ class AuthServiceTest {
         when(authRepository.existsByEmail(TEST_EMAIL)).thenReturn(false);
         when(authRepository.existsByUsername(TEST_USERNAME)).thenReturn(false);
         when(passwordEncoder.encode(any())).thenReturn("encodedPassword");
+        when(jwtService.createAccessToken(anyString())).thenReturn("accessToken");
+        when(jwtService.createAndSaveRefreshToken(anyString())).thenReturn("refreshToken");
 
         // when
         authService.signup(testMember);
