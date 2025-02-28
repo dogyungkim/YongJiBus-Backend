@@ -19,7 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.yongjibus.auth.domain.Member;
-import com.yongjibus.auth.repository.AuthRepository;
+import com.yongjibus.auth.repository.MemberRepository;
 import com.yongjibus.global.exception.AuthException;
 import com.yongjibus.global.exception.ErrorCode;
 import com.yongjibus.global.redis.EmailTokenRedisService;
@@ -31,7 +31,7 @@ class AuthServiceTest {
     private AuthService authService;
 
     @Mock
-    private AuthRepository authRepository;
+    private MemberRepository authRepository;
 
     @Mock
     private EmailService emailService;

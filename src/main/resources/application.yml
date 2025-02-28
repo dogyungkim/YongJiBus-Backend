@@ -46,6 +46,11 @@ spring:
       
 secrets:
   open_api_key: ${OPEN_API_KEY}
+  
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-validity: 3600000
+  refresh-token-validity: 604800000
 
 management:  
   endpoints:  

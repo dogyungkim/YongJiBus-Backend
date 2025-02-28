@@ -1,13 +1,16 @@
 package com.yongjibus.auth.service;
 
-//import org.springframework.security.crypto.password.PasswordEncoder;
+import java.util.List;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.yongjibus.auth.domain.Member;
-import com.yongjibus.auth.repository.AuthRepository;
+import com.yongjibus.auth.repository.MemberRepository;
 import com.yongjibus.global.exception.AuthException;
 import com.yongjibus.global.exception.ErrorCode;
+import com.yongjibus.global.jwt.JwtService;
 import com.yongjibus.global.redis.EmailTokenRedisService;
 
 import lombok.RequiredArgsConstructor;
@@ -18,10 +21,12 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 public class AuthService {
-    private final AuthRepository authRepository;
+    private final MemberRepository authRepository;
     private final EmailService emailService;
     private final EmailTokenRedisService emailTokenRedisService;
-   // private final PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+
     /**
      * 이메일 인증 코드를 생성하고 발송합니다.
      * 
@@ -58,13 +63,21 @@ public class AuthService {
         }
     }
     
+    /**
+     * 사용자 로그인을 처리합니다.
+     * 이메일과 비밀번호를 검증하여 유효한 사용자인지 확인합니다.
+     * 
+     * @param email 로그인할 사용자의 이메일
+     * @param password 로그인할 사용자의 비밀번호
+     * @throws AuthException 이메일이 존재하지 않거나 비밀번호가 일치하지 않을 경우
+     */
     public void login(String email, String password) {
         Member member = authRepository.findByEmail(email)
             .orElseThrow(() -> new AuthException(ErrorCode.INVALID_CREDENTIALS));
 
-        // if (!passwordEncoder.matches(password, member.getPassword())) {
-        //     throw new AuthException(ErrorCode.INVALID_CREDENTIALS);
-        // }
+        if (!passwordEncoder.matches(password, member.getPassword())) {
+            throw new AuthException(ErrorCode.INVALID_CREDENTIALS);
+        }
     }
 
     /**
@@ -73,18 +86,24 @@ public class AuthService {
      * 
      * @param member 등록할 회원 정보
      */
-    public void signup(Member member) {
+    public List<String> signup(Member member) {
         validateEmailVerification(member.getEmail());
         validateDuplicateEmail(member.getEmail());
         validateDuplicateUsername(member.getUsername());
 
         Member newMember = Member.builder()
             .email(member.getEmail())
-            //.password(passwordEncoder.encode(member.getPassword()))
+            .name(member.getName())
+            .password(passwordEncoder.encode(member.getPassword()))
             .username(member.getUsername())
             .build();
 
         authRepository.save(newMember);
+
+        String accessToken = jwtService.createAccessToken(member.getEmail());
+        String refreshToken = jwtService.createAndSaveRefreshToken(member.getEmail());
+
+        return List.of(accessToken, refreshToken);
     }
 
     private void validateEmailVerification(String email) {

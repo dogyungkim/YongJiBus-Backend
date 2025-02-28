@@ -1,5 +1,7 @@
 package com.yongjibus.auth.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -10,6 +12,7 @@ import com.yongjibus.auth.domain.dto.EmailAuthCodeRequestDTO;
 import com.yongjibus.auth.domain.dto.EmailVerifyRequestDTO;
 import com.yongjibus.auth.domain.dto.LoginRequestDTO;
 import com.yongjibus.auth.domain.dto.SignupRequestDTO;
+import com.yongjibus.auth.domain.dto.SignupResponseDTO;
 import com.yongjibus.auth.service.AuthService;
 import com.yongjibus.global.ApiResponse;
 
@@ -39,11 +42,11 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<String>> signup(@Valid @RequestBody SignupRequestDTO dto) {
+    public ResponseEntity<ApiResponse<SignupResponseDTO>> signup(@Valid @RequestBody SignupRequestDTO dto) {
 
-        authService.signup(dto.toEntity());
+        List<String> tokens = authService.signup(dto.toEntity());
         
-        return ApiResponse.success("회원가입이 완료되었습니다.");
+        return ApiResponse.success(new SignupResponseDTO(tokens.get(0), tokens.get(1)));
     }
 
     @PostMapping("/login")
@@ -51,5 +54,4 @@ public class AuthController {
         authService.login(dto.email(), dto.password());
         return ApiResponse.success("로그인이 완료되었습니다.");
     }
-
 }
