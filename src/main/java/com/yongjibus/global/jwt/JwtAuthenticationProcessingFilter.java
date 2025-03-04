@@ -1,6 +1,7 @@
 package com.yongjibus.global.jwt;
 
 import java.io.IOException;
+import java.util.Set;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -27,12 +28,22 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final MemberDetailService memberDetailService;
+
+    private static final Set<String> EXCLUDED_ENDPOINTS = Set.of(
+        "/ws-stomp",
+        "/auth",
+        "/actuator",
+        "/vacation",
+        "/day"
+    );
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
         String path = request.getRequestURI();
-        if (path.startsWith("/auth/") && !path.startsWith("/auth/logout")) {
+        
+        if (EXCLUDED_ENDPOINTS.stream().anyMatch(path::startsWith) && !path.startsWith("/auth/logout")) {
             filterChain.doFilter(request, response);
             return;
         }

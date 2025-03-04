@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.yongjibus.auth.domain.Member;
 import com.yongjibus.auth.domain.dto.AuthTokenDTO;
-import com.yongjibus.auth.repository.MemberRepository;
 import com.yongjibus.global.exception.AuthException;
 import com.yongjibus.global.exception.ErrorCode;
 import com.yongjibus.global.jwt.JwtService;
@@ -23,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 public class AuthService {
-    private final MemberRepository authRepository;
+    private final MemberService memberService;
     private final EmailService emailService;
     private final EmailTokenRedisService emailTokenRedisService;
     private final PasswordEncoder passwordEncoder;
@@ -35,12 +34,13 @@ public class AuthService {
      * 
      * @param email 인증 코드를 받을 이메일 주소
      */
-    public void sendAuthEmail(String email) {
+    public String sendAuthEmail(String email) {
         String authCode = AuthCodeGenerator.generateCode();
         log.info("인증 코드 : {}", authCode);
 
         emailTokenRedisService.setAuthCode(email, authCode);
         //emailService.sendAuthEmail(email, authCode);
+        return authCode;
     }
 
     /**
@@ -76,8 +76,8 @@ public class AuthService {
      * @throws AuthException 이메일이 존재하지 않거나 비밀번호가 일치하지 않을 경우
      */
     public AuthTokenDTO login(String email, String password) {
-        Member member = authRepository.findByEmail(email)
-            .orElseThrow(() -> new AuthException(ErrorCode.INVALID_CREDENTIALS));
+
+        Member member = memberService.getMemberByEmail(email);
 
         if (!passwordEncoder.matches(password, member.getPassword())) {
             throw new AuthException(ErrorCode.INVALID_CREDENTIALS);
@@ -98,8 +98,7 @@ public class AuthService {
      */
     public List<String> signup(Member member) {
         validateEmailVerification(member.getEmail());
-        validateDuplicateEmail(member.getEmail());
-        validateDuplicateUsername(member.getUsername());
+        memberService.validateMemberInfoToSignup(member);
 
         Member newMember = Member.builder()
             .email(member.getEmail())
@@ -108,30 +107,12 @@ public class AuthService {
             .username(member.getUsername())
             .build();
 
-        authRepository.save(newMember);
+        memberService.saveMember(newMember);
 
         String accessToken = jwtService.createAccessToken(member.getEmail());
         String refreshToken = jwtService.createAndSaveRefreshToken(member.getEmail());
 
         return List.of(accessToken, refreshToken);
-    }
-
-    private void validateEmailVerification(String email) {
-        if (!emailTokenRedisService.isVerified(email)) {
-            throw new AuthException(ErrorCode.EMAIL_NOT_VERIFIED);
-        }
-    }
-
-    private void validateDuplicateEmail(String email) {
-        if (authRepository.existsByEmail(email)) {
-            throw new AuthException(ErrorCode.EMAIL_ALREADY_EXISTS);
-        }
-    }
-
-    private void validateDuplicateUsername(String username) {
-        if (authRepository.existsByUsername(username)) {
-            throw new AuthException(ErrorCode.USERNAME_ALREADY_EXISTS);
-        }
     }
 
     /**
@@ -170,6 +151,12 @@ public class AuthService {
 
         member.delete();
         
-        authRepository.save(member);
+        memberService.saveMember(member);
+    }
+
+    private void validateEmailVerification(String email) {
+        if (!emailTokenRedisService.isVerified(email)) {
+            throw new AuthException(ErrorCode.EMAIL_NOT_VERIFIED);
+        }
     }
 }

@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
-import com.yongjibus.chatting.domain.ChatRoom;
+import com.yongjibus.chat.domain.ChatRoom;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -62,5 +62,9 @@ public class Member {
 
     public void delete() {
         this.isDeleted = true;
+    }
+
+    public void setRoom(ChatRoom room) {
+        this.room = room;
     }
 }

@@ -1,4 +1,4 @@
-package com.yongjibus.chatting.domain.dto;
+package com.yongjibus.chat.domain.dto;
 
 import java.time.LocalTime;
 

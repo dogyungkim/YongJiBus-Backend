@@ -40,8 +40,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                //.requestMatchers("/ws-stomp").permitAll() // WebSocket 핸드셰이크 엔드포인트 인증 제외
-                .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/ws-stomp").permitAll() // WebSocket 핸드셰이크 엔드포인트 인증 제외
+                .requestMatchers("/auth/**", "/actuator/**","/vacation/**", "/day").permitAll()
                 .anyRequest().authenticated()
             )
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))

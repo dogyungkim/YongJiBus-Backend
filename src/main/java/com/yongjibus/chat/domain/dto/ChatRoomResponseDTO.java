@@ -1,8 +1,9 @@
-package com.yongjibus.chatting.domain.dto;
+package com.yongjibus.chat.domain.dto;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import com.yongjibus.chatting.domain.ChatRoom;
+
+import com.yongjibus.chat.domain.ChatRoom;
 
 import lombok.Builder;
 import lombok.Getter;

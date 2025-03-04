@@ -14,7 +14,6 @@ import com.yongjibus.auth.domain.dto.EmailVerifyRequestDTO;
 import com.yongjibus.auth.domain.dto.LoginRequestDTO;
 import com.yongjibus.auth.domain.dto.SignupRequestDTO;
 import com.yongjibus.auth.domain.dto.TokenRefreshRequestDTO;
-import com.yongjibus.auth.domain.Member;
 import com.yongjibus.auth.domain.MemberDetail;
 import com.yongjibus.auth.domain.dto.AuthTokenDTO;
 import com.yongjibus.auth.service.AuthService;

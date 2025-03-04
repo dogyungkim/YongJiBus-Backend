@@ -1,0 +1,71 @@
+package com.yongjibus.chat.service;
+
+import java.time.LocalTime;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.yongjibus.auth.domain.Member;
+import com.yongjibus.auth.service.MemberService;
+import com.yongjibus.chat.domain.ChatMessage;
+import com.yongjibus.chat.domain.ChatRoom;
+import com.yongjibus.chat.repository.ChatRepository;
+import com.yongjibus.chat.repository.ChatRoomRepository;
+import com.yongjibus.global.exception.ChatException;
+import com.yongjibus.global.exception.ErrorCode;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class ChatService {
+    
+    private final ChatRoomRepository chatRoomRepository;
+    private final ChatRepository chatRepository;
+    private final MemberService memberService;
+
+    @Transactional(readOnly = true)
+    public List<ChatRoom> getAllChatRooms() {
+        return chatRoomRepository.findAll();
+    }
+
+    @Transactional
+    public ChatRoom createChatRoom(String name, LocalTime departureTime, Member member) {
+        ChatRoom chatRoom = ChatRoom.builder()
+                .name(name)
+                .departureTime(departureTime)
+                .build();
+        chatRoomRepository.save(chatRoom);
+        setChatRoom(chatRoom, member);
+
+        return chatRoom;
+    }
+
+    @Transactional
+    public ChatRoom joinChatRoom(Long roomId, Member member) {
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId)
+            .orElseThrow(() -> new ChatException(ErrorCode.CHAT_ROOM_NOT_FOUND));
+
+        setChatRoom(chatRoom, member);
+
+        return chatRoomRepository.save(chatRoom);
+    }
+
+    private void setChatRoom(ChatRoom chatRoom, Member member) {
+        member.setRoom(chatRoom);
+        memberService.saveMember(member);
+    }
+
+    @Transactional
+    public void saveChatMessage(ChatMessage message) {
+        chatRepository.save(message);
+    } 
+
+    @Transactional(readOnly = true)
+    public List<ChatMessage> getChatMessages(Long roomId) {
+        return chatRepository.findByRoomId(roomId);
+    }
+}
