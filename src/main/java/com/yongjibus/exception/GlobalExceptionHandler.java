@@ -13,7 +13,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DateInfoNotFoundException.class)
     public ResponseEntity<ExceptionResponse> handleNotFoundException(DateInfoNotFoundException e) {
-        log.error("DataNotFoundException: {}", e.getMessage());
+        log.error("DateInfoNotFoundException: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ExceptionResponse(e.getMessage(), "404"));
     }

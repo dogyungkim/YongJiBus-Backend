@@ -22,7 +22,7 @@ import com.yongjibus.arrivaltime.domain.SaveArrivalTimeRequestDTO;
 import com.yongjibus.arrivaltime.domain.GetArrivalTimeRequestDTO;
 import com.yongjibus.arrivaltime.repository.ArrivalTimeRepository;
 import com.yongjibus.arrivaltime.service.ArrivalTimeService;
-import com.yongjibus.exception.DataNotFoundException;
+import com.yongjibus.exception.DateInfoNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 public class ArrivalTimeServiceTest {
@@ -85,7 +85,7 @@ public class ArrivalTimeServiceTest {
         when(arrivalTimeRepository.findByTimeIdAndDate(busId, date)).thenReturn(new ArrayList<>());
 
         // when & then
-        DataNotFoundException exception = assertThrows(DataNotFoundException.class, 
+        DateInfoNotFoundException exception = assertThrows(DateInfoNotFoundException.class,
             () -> arrivalTimeService.getArrivalTimeByBusIdAndDate(request));
         
         assertEquals(
