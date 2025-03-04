@@ -2,9 +2,11 @@ package com.yongjibus.daytype.repository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.yongjibus.daytype.domain.DateInfo;
 import com.yongjibus.exception.DateInfoNotFoundException;
+
 
 import jakarta.annotation.PostConstruct;
 
@@ -18,7 +20,6 @@ import java.util.stream.IntStream;
 @RequiredArgsConstructor
 public class InMemoryDayTypeRepository implements DayTypeRepository {
 
-    // List로 HolidayInfo를 저장
     private static final List<DateInfo> store = new CopyOnWriteArrayList<>();
 
     @PostConstruct
@@ -38,7 +39,7 @@ public class InMemoryDayTypeRepository implements DayTypeRepository {
                 return dateInfo;
             }
         }
-        throw new DateInfoNotFoundException(date.toString());
+        throw new DateInfoNotFoundException(date.toString() + " 날짜의 데이터를 찾을 수 없습니다.");
     }
 
     /**
