@@ -11,7 +11,7 @@ import com.yongjibus.arrivaltime.domain.ArrivalTime;
 import com.yongjibus.arrivaltime.domain.SaveArrivalTimeRequestDTO;
 import com.yongjibus.arrivaltime.domain.GetArrivalTimeRequestDTO;
 import com.yongjibus.arrivaltime.repository.ArrivalTimeRepository;
-import com.yongjibus.exception.DataNotFoundException;
+import com.yongjibus.exception.DateInfoNotFoundException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

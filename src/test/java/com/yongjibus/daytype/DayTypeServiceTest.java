@@ -19,6 +19,7 @@ import com.yongjibus.daytype.client.HolidayApiClient;
 import com.yongjibus.daytype.domain.DateInfo;
 import com.yongjibus.daytype.repository.DayTypeRepository;
 import com.yongjibus.daytype.service.DayTypeService;
+import com.yongjibus.vacation.service.VacationService;
 
 @ExtendWith(MockitoExtension.class)
 class DayTypeServiceTest {
@@ -28,6 +29,9 @@ class DayTypeServiceTest {
 
     @Mock
     private HolidayApiClient holidayApiClient;
+    
+    @Mock
+    private VacationService vacationService;
 
     @InjectMocks
     private DayTypeService dayTypeService;
@@ -58,6 +62,7 @@ class DayTypeServiceTest {
         // given
         DateInfo expectedDateInfo = new DateInfo(testDate, true, "신정");
         when(dayTypeRepository.findByDate(testDate)).thenReturn(expectedDateInfo);
+        when(vacationService.isVacation(testDate)).thenReturn(false);
 
         // when
         DateInfo result = dayTypeService.findDayInfo(testDate);

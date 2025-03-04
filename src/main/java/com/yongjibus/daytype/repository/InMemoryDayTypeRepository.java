@@ -5,7 +5,8 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.yongjibus.daytype.domain.DateInfo;
-import com.yongjibus.exception.DataNotFoundException;
+import com.yongjibus.exception.DateInfoNotFoundException;
+
 
 import jakarta.annotation.PostConstruct;
 
@@ -38,7 +39,7 @@ public class InMemoryDayTypeRepository implements DayTypeRepository {
                 return dateInfo;
             }
         }
-        throw new DataNotFoundException(date.toString() + " 날짜의 데이터를 찾을 수 없습니다.");
+        throw new DateInfoNotFoundException(date.toString() + " 날짜의 데이터를 찾을 수 없습니다.");
     }
 
     /**

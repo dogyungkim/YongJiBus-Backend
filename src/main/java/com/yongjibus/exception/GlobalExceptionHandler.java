@@ -11,8 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(DataNotFoundException.class)
-    public ResponseEntity<ExceptionResponse> handleNotFoundException(DataNotFoundException e) {
+    @ExceptionHandler(DateInfoNotFoundException.class)
+    public ResponseEntity<ExceptionResponse> handleNotFoundException(DateInfoNotFoundException e) {
         log.error("DataNotFoundException: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ExceptionResponse(e.getMessage(), "404"));

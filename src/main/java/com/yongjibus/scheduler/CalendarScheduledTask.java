@@ -13,7 +13,6 @@ public class CalendarScheduledTask {
 
     private final InMemoryDayTypeRepository inMemoryDayTypeRepository;
 
-
     // 매달 1일 자정에 실행
     @Scheduled(cron = "0 0 0 1 * ?")
     public void executeMonthlyTask() {
