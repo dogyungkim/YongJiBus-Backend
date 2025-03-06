@@ -57,3 +57,4 @@ build/
 .DS_Store
 HELP.md
 .env
+src/main/resources/firebase/
