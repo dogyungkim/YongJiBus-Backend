@@ -2,7 +2,6 @@ package com.yongjibus.auth.service;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -23,7 +22,7 @@ import com.yongjibus.auth.repository.MemberRepository;
 import com.yongjibus.global.exception.AuthException;
 import com.yongjibus.global.exception.ErrorCode;
 import com.yongjibus.global.jwt.JwtService;
-import com.yongjibus.global.redis.EmailTokenRedisService;
+import com.yongjibus.global.redis.EmailTokenRedisServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -38,7 +37,7 @@ class AuthServiceTest {
     private EmailService emailService;
 
     @Mock
-    private EmailTokenRedisService emailTokenRedisService;
+    private EmailTokenRedisServiceImpl emailTokenRedisService;
 
     @Mock
     private PasswordEncoder passwordEncoder;

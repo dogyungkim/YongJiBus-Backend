@@ -3,6 +3,7 @@ package com.yongjibus.chat.service;
 import java.time.LocalTime;
 import java.util.List;
 
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,7 @@ public class ChatService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatRepository chatRepository;
     private final MemberService memberService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional(readOnly = true)
     public List<ChatRoom> getAllChatRooms() {
@@ -54,18 +56,27 @@ public class ChatService {
         return chatRoomRepository.save(chatRoom);
     }
 
-    private void setChatRoom(ChatRoom chatRoom, Member member) {
-        member.setRoom(chatRoom);
-        memberService.saveMember(member);
-    }
-
     @Transactional
-    public void saveChatMessage(ChatMessage message) {
+    public void processAndSendMessage(ChatMessage message) {
+        //메시지 저장
         chatRepository.save(message);
-    } 
+
+        //소켓 관련 로직
+
+        // 사용자와 세션이 유지되고 있으면 메시지 전송
+        messagingTemplate.convertAndSend("/sub/chat/room/" + message.getRoomId(), message);
+        // 사용자와 세션이 해제 된 경우 알림 전송   
+        // sendNotificationToOfflineUsers(message);
+    }
 
     @Transactional(readOnly = true)
     public List<ChatMessage> getChatMessages(Long roomId) {
         return chatRepository.findByRoomId(roomId);
+    }
+
+
+    private void setChatRoom(ChatRoom chatRoom, Member member) {
+        member.setRoom(chatRoom);
+        memberService.saveMember(member);
     }
 }

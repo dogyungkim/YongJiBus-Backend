@@ -3,7 +3,7 @@ package com.yongjibus.chat.service;
 import com.yongjibus.auth.domain.Member;
 import com.yongjibus.chat.domain.FCMToken;
 import com.yongjibus.chat.repository.FCMTokenRepository;
-import com.yongjibus.global.exception.AuthException;
+import com.yongjibus.global.exception.ChatException;
 import com.yongjibus.global.exception.ErrorCode;
 
 import lombok.RequiredArgsConstructor;
@@ -49,8 +49,7 @@ public class FCMTokenService {
     public FCMToken getActiveTokenByMember(Member member) {
         Optional<FCMToken> fcmToken = fcmTokenRepository.findByMemberAndIsActiveTrue(member);
         if(!fcmToken.isPresent()){
-            //TODO: 커스텀 Exception 만들기
-            throw new AuthException(ErrorCode.UNAUTHORIZED);
+            throw new ChatException(ErrorCode.FCM_TOKEN_NOT_FOUND);
         }
 
         return fcmToken.get();

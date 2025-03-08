@@ -11,24 +11,19 @@ import com.yongjibus.auth.domain.dto.AuthTokenDTO;
 import com.yongjibus.global.exception.AuthException;
 import com.yongjibus.global.exception.ErrorCode;
 import com.yongjibus.global.jwt.JwtService;
-import com.yongjibus.global.redis.EmailTokenRedisService;
-import com.yongjibus.global.redis.JwtRedisService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Transactional
 @RequiredArgsConstructor
 @Service
 @Slf4j
 public class AuthService {
     private final MemberService memberService;
     private final EmailService emailService;
-    private final EmailTokenRedisService emailTokenRedisService;
+    private final EmailTokenService emailTokenService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final JwtRedisService jwtRedisService;
-
     /**
      * 이메일 인증 코드를 생성하고 발송합니다.
      * 
@@ -38,7 +33,7 @@ public class AuthService {
         String authCode = AuthCodeGenerator.generateCode();
         log.info("인증 코드 : {}", authCode);
 
-        emailTokenRedisService.setAuthCode(email, authCode);
+        emailTokenService.setAuthCode(email, authCode);
         //emailService.sendAuthEmail(email, authCode);
         return authCode;
     }
@@ -51,7 +46,7 @@ public class AuthService {
      * @return 인증 성공 여부
      */
     public void verifyAuthCode(String email, String authCode) {
-        String storedAuthCode = emailTokenRedisService.getAuthCode(email);
+        String storedAuthCode = emailTokenService.getAuthCode(email);
         log.info("인증 이메일 : {}, 인증 코드 : {}", email, storedAuthCode);
 
         if (storedAuthCode == null) {
@@ -59,8 +54,8 @@ public class AuthService {
         }
 
         if (authCode.equals(storedAuthCode)) {
-            emailTokenRedisService.deleteAuthCode(email);
-            emailTokenRedisService.setVerified(email);
+            emailTokenService.deleteAuthCode(email);
+            emailTokenService.setVerified(email);
         } else {
             throw new AuthException(ErrorCode.INVALID_AUTH_CODE);
         }
@@ -75,6 +70,7 @@ public class AuthService {
      * @return 발급된 AccessToken과 RefreshToken
      * @throws AuthException 이메일이 존재하지 않거나 비밀번호가 일치하지 않을 경우
      */
+    @Transactional
     public AuthTokenDTO login(String email, String password) {
 
         Member member = memberService.getMemberByEmail(email);
@@ -96,6 +92,7 @@ public class AuthService {
      * 
      * @param member 등록할 회원 정보
      */
+    @Transactional
     public List<String> signup(Member member) {
         validateEmailVerification(member.getEmail());
         memberService.validateMemberInfoToSignup(member);
@@ -140,14 +137,14 @@ public class AuthService {
     /**
      * 사용자 로그아웃을 처리합니다.
      * RefreshToken을 무효화하여 로그아웃 처리합니다.
-     * 
-     * @param refreshToken 무효화할 RefreshToken
+     *
      * @throws AuthException RefreshToken이 유효하지 않을 경우
      */
+    @Transactional
     public void logout(Member member) {
 
         // Redis에서 RefreshToken 삭제
-        jwtRedisService.deleteRefreshToken(member.getEmail());
+        jwtService.deleteRefreshToken(member.getEmail());
 
         member.delete();
         
@@ -155,7 +152,7 @@ public class AuthService {
     }
 
     private void validateEmailVerification(String email) {
-        if (!emailTokenRedisService.isVerified(email)) {
+        if (!emailTokenService.isVerified(email)) {
             throw new AuthException(ErrorCode.EMAIL_NOT_VERIFIED);
         }
     }

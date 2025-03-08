@@ -8,8 +8,6 @@ import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.yongjibus.global.redis.JwtRedisService;
-
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -40,7 +38,7 @@ public class JwtService {
     private final String BEARER = "Bearer ";
     private final String ACCESS_HEADER = "Authorization";
 
-    private final JwtRedisService jwtRedisService;
+    private final JwtCacheService jwtCacheService;
 
     @PostConstruct
     public void init() {
@@ -56,7 +54,7 @@ public class JwtService {
      */
     public String createAndSaveRefreshToken(String email) {
         String refreshToken = createRefreshToken();
-        jwtRedisService.setRefreshToken(email, refreshToken);
+        jwtCacheService.setRefreshToken(email, refreshToken);
         return refreshToken;
     }
 
@@ -89,7 +87,7 @@ public class JwtService {
      * @return 토큰 유효성 여부
      */
     public boolean validateRefreshToken(String email, String refreshToken) {
-        String storedToken = jwtRedisService.getRefreshToken(email);
+        String storedToken = jwtCacheService.getRefreshToken(email);
         return storedToken != null && storedToken.equals(refreshToken) && validateToken(refreshToken);
     }
     
@@ -100,8 +98,12 @@ public class JwtService {
      * @return 새로 생성된 Refresh 토큰
      */
     public String rotateRefreshToken(String email) {
-        jwtRedisService.deleteRefreshToken(email);
+        jwtCacheService.deleteRefreshToken(email);
         return createAndSaveRefreshToken(email);
+    }
+
+    public void deleteRefreshToken(String email) {
+        jwtCacheService.deleteRefreshToken(email);
     }
 
     public boolean validateToken(String token) {

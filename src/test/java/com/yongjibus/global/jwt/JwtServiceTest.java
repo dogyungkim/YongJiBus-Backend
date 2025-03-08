@@ -1,7 +1,6 @@
 package com.yongjibus.global.jwt;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -17,7 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.yongjibus.global.redis.JwtRedisService;
+import com.yongjibus.global.redis.JwtCacheRedisServiceImpl;
 
 import io.jsonwebtoken.security.Keys;
 
@@ -28,7 +27,7 @@ class JwtServiceTest {
     private JwtService jwtService;
 
     @Mock
-    private JwtRedisService jwtRedisService;
+    private JwtCacheRedisServiceImpl jwtRedisService;
 
     private final String TEST_EMAIL = "test@example.com";
     private final String TEST_SECRET_KEY = "testSecretKeytestSecretKeytestSecretKeytestSecretKey";

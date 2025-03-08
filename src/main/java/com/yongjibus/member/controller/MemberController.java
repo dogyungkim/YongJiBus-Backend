@@ -3,13 +3,11 @@ package com.yongjibus.member.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.yongjibus.auth.domain.Member;
 import com.yongjibus.auth.domain.MemberDetail;
-import com.yongjibus.auth.service.MemberService;
 import com.yongjibus.member.controller.dto.MemberResponseDTO;
 import com.yongjibus.global.ApiResponse;
 import com.yongjibus.global.exception.AuthException;

@@ -16,7 +16,7 @@ public class FireBaseConfig {
     public FirebaseApp firebaseApp() throws IOException {
         if (FirebaseApp.getApps().isEmpty()) {
             GoogleCredentials googleCredentials = GoogleCredentials
-                    .fromStream(new ClassPathResource("firebase/firebase-service-account.json").getInputStream());
+                    .fromStream(new ClassPathResource("firebase/yongjibus-firebase-adminsdk-i5oxw-6c26cc2dfb.json").getInputStream());
             FirebaseOptions options = FirebaseOptions.builder()
                     .setCredentials(googleCredentials)
                     .build();
