@@ -34,5 +34,11 @@ public class GlobalExceptionHandler {
         log.error("AuthException: {}", e.getMessage());
         return ApiResponse.error(e.getErrorCode().getStatus().value(), e.getMessage());
     }
+
+    @ExceptionHandler(ChatException.class)
+    public ResponseEntity<ApiResponse<String>> handleChatException(ChatException e) {
+        log.error("ChatException: {}", e.getMessage());
+        return ApiResponse.error(e.getErrorCode().getStatus().value(), e.getMessage());
+    }
 }
 

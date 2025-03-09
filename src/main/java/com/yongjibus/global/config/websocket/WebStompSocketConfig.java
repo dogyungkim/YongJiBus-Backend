@@ -7,6 +7,10 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
+import com.yongjibus.global.exception.WebsocketStompErrorHandler;
+import com.yongjibus.global.websocket.JwtHandshakeInterceptor;
+import com.yongjibus.global.websocket.StompPreHandler;
+
 import lombok.RequiredArgsConstructor;
 
 @Configuration
@@ -16,6 +20,8 @@ public class WebStompSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final JwtHandshakeInterceptor jwtHandshakeInterceptor;
     private final StompPreHandler stompPreHandler;
+    private final WebsocketStompErrorHandler websocketStompErrorHandler;
+
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         config.enableSimpleBroker("/sub");
@@ -27,6 +33,7 @@ public class WebStompSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws-stomp")
                .addInterceptors(jwtHandshakeInterceptor)
                .setAllowedOrigins("*");
+        registry.setErrorHandler(websocketStompErrorHandler);
     }
 
     @Override

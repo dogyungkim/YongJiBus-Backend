@@ -1,4 +1,4 @@
-package com.yongjibus.global.config.websocket;
+package com.yongjibus.global.websocket;
 
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import com.yongjibus.global.exception.ErrorCode;
+import com.yongjibus.global.exception.StompException;
 import com.yongjibus.global.jwt.JwtService;
 
 @Component
@@ -29,11 +31,10 @@ public class StompPreHandler implements ChannelInterceptor {
             String token = accessor.getNativeHeader("authorization").get(0);
             if (token != null && token.startsWith("Bearer ")) { 
                 token = token.substring(7);
-                log.info("token: {}", token);
                 if (jwtService.validateToken(token)) {
+                    throw new StompException(ErrorCode.INVALID_ACCESS_TOKEN);
                 } else {
-                    log.error("Invalid JWT Token: {}", token);
-                    throw new IllegalArgumentException("Invalid JWT Token");
+                    throw new StompException(ErrorCode.INVALID_ACCESS_TOKEN);
                 }
             }
         } else if (accessor != null && StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
