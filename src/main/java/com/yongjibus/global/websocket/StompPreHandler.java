@@ -21,6 +21,7 @@ import com.yongjibus.global.jwt.JwtService;
 public class StompPreHandler implements ChannelInterceptor {
 
     private final JwtService jwtService;
+    private final WebsocketSessionManager websocketSessionManager;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -29,20 +30,24 @@ public class StompPreHandler implements ChannelInterceptor {
         if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
             log.info("STOMP Connection established");
             String token = accessor.getNativeHeader("authorization").get(0);
+
             if (token != null && token.startsWith("Bearer ")) { 
                 token = token.substring(7);
                 if (jwtService.validateToken(token)) {
-                    throw new StompException(ErrorCode.INVALID_ACCESS_TOKEN);
+                    String email = jwtService.getEmailFromToken(token);
+                    websocketSessionManager.addSession(accessor.getSessionId(), email);
                 } else {
                     throw new StompException(ErrorCode.INVALID_ACCESS_TOKEN);
                 }
             }
+
         } else if (accessor != null && StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
             log.info("STOMP Subscription: {}", accessor.getDestination());
         } else if (accessor != null && StompCommand.SEND.equals(accessor.getCommand())) {
             log.info("STOMP Message sent to: {}", accessor.getDestination());
         } else if (accessor != null && StompCommand.DISCONNECT.equals(accessor.getCommand())) {
             log.info("STOMP Connection closed");
+            websocketSessionManager.removeSessionBySessionId(accessor.getSessionId());
         }
         return message;
     }

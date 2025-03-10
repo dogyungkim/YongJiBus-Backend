@@ -15,7 +15,7 @@ import com.yongjibus.chat.repository.ChatRepository;
 import com.yongjibus.chat.repository.ChatRoomRepository;
 import com.yongjibus.global.exception.ChatException;
 import com.yongjibus.global.exception.ErrorCode;
-
+import com.yongjibus.global.websocket.WebsocketSessionManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,6 +28,7 @@ public class ChatService {
     private final ChatRepository chatRepository;
     private final MemberService memberService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final WebsocketSessionManager websocketSessionManager;
 
     @Transactional(readOnly = true)
     public List<ChatRoom> getAllChatRooms() {
@@ -51,8 +52,13 @@ public class ChatService {
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
             .orElseThrow(() -> new ChatException(ErrorCode.CHAT_ROOM_NOT_FOUND));
 
-        setChatRoom(chatRoom, member);
-
+        // 이미 해당 채팅방에 참여 중인지 확인
+        if (member.getRoom() != null && member.getRoom().getId().equals(roomId)) {
+            return chatRoom;
+        }
+        
+        member.setRoom(chatRoom);
+        
         return chatRoomRepository.save(chatRoom);
     }
 
@@ -62,7 +68,15 @@ public class ChatService {
         chatRepository.save(message);
 
         //소켓 관련 로직
-
+        ChatRoom chatRoom = chatRoomRepository.findById(message.getRoomId())
+            .orElseThrow(() -> new ChatException(ErrorCode.CHAT_ROOM_NOT_FOUND));
+        
+        List<Member> members = chatRoom.getMembers();
+        for (Member member : members) {
+            if (!websocketSessionManager.isSessionExists(member.getEmail())) {
+                log.info("Member {} has no session", member.getEmail());
+            }
+        }
         // 사용자와 세션이 유지되고 있으면 메시지 전송
         messagingTemplate.convertAndSend("/sub/chat/room/" + message.getRoomId(), message);
         // 사용자와 세션이 해제 된 경우 알림 전송   

@@ -66,5 +66,8 @@ public class Member {
 
     public void setRoom(ChatRoom room) {
         this.room = room;
+        if (room != null && !room.getMembers().contains(this)) {
+            room.getMembers().add(this);
+        }
     }
 }

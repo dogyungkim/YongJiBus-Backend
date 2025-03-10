@@ -14,7 +14,7 @@ public class YongjibusApplication implements CommandLineRunner{
 
 	private final AuthService authService;
 
-	private static final String email = "test@test.com";
+	private static final String email = "test1@mju.ac.kr";
 	private static final String username = "김도경";
 	private static final String name = "김도경";
 	private static final String password = "12341234";

@@ -9,8 +9,6 @@ import java.util.Map;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 
-import com.yongjibus.global.exception.ErrorCode;
-import com.yongjibus.global.exception.StompException;
 import com.yongjibus.global.jwt.JwtService;
 
 import lombok.RequiredArgsConstructor;
@@ -32,7 +30,7 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
             token = token.substring(7);
             try {
                 if (jwtService.validateToken(token)) {
-                    attributes.put("username", jwtService.getEmailFromToken(token));
+                    attributes.put("email", jwtService.getEmailFromToken(token));
                     return true;
                 }
             } catch (Exception e) {

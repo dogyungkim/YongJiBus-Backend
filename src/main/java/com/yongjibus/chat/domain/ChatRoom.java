@@ -2,6 +2,7 @@ package com.yongjibus.chat.domain;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.data.annotation.CreatedDate;
@@ -34,7 +35,7 @@ public class ChatRoom {
     private LocalTime departureTime;
     
     @OneToMany(mappedBy = "room")
-    private List<Member> members;
+    private List<Member> members = new ArrayList<>();
 
     @CreatedDate
     private LocalDateTime createdAt;
@@ -50,5 +51,4 @@ public class ChatRoom {
     public int getUserCount() {
         return members.size();
     }
-        
 }
