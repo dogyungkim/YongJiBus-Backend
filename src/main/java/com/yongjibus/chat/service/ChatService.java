@@ -26,6 +26,7 @@ public class ChatService {
     
     private final ChatRoomRepository chatRoomRepository;
     private final ChatRepository chatRepository;
+
     private final MemberService memberService;
     private final SimpMessagingTemplate messagingTemplate;
     private final WebsocketSessionManager websocketSessionManager;
@@ -82,7 +83,6 @@ public class ChatService {
                 fcmNotificationService.sendChatNotification(message, member, chatRoom);
             }
         }
-
         messagingTemplate.convertAndSend("/sub/chat/room/" + message.getRoomId(), message);
     }
 

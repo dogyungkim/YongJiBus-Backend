@@ -58,6 +58,7 @@ public class Member {
         this.username = username;
         this.email = email;
         this.password = password;
+        this.isDeleted = false;
     }
 
     public void delete() {

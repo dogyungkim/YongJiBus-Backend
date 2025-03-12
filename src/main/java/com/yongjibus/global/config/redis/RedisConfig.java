@@ -1,4 +1,4 @@
-package com.yongjibus.global.redis;
+package com.yongjibus.global.config.redis;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

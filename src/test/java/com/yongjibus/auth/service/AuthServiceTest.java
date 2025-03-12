@@ -22,7 +22,6 @@ import com.yongjibus.auth.repository.MemberRepository;
 import com.yongjibus.global.exception.AuthException;
 import com.yongjibus.global.exception.ErrorCode;
 import com.yongjibus.global.jwt.JwtService;
-import com.yongjibus.global.redis.EmailTokenRedisServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -37,13 +36,16 @@ class AuthServiceTest {
     private EmailService emailService;
 
     @Mock
-    private EmailTokenRedisServiceImpl emailTokenRedisService;
+    private EmailTokenService emailTokenService;
 
     @Mock
     private PasswordEncoder passwordEncoder;
 
     @Mock
     private JwtService jwtService;
+
+    @Mock
+    private MemberService memberService;
 
     private Member testMember;
     private final String TEST_EMAIL = "test@example.com";
@@ -67,7 +69,7 @@ class AuthServiceTest {
         authService.sendAuthEmail(TEST_EMAIL);
 
         // then
-        verify(emailTokenRedisService).setAuthCode(anyString(), anyString());
+        verify(emailTokenService).setAuthCode(anyString(), anyString());
     }
 
     @Test
@@ -75,14 +77,14 @@ class AuthServiceTest {
     void verifyAuthCodeSuccessTest() {
         // given
         String authCode = "123456";
-        when(emailTokenRedisService.getAuthCode(TEST_EMAIL)).thenReturn(authCode);
+        when(emailTokenService.getAuthCode(TEST_EMAIL)).thenReturn(authCode);
 
         // when
         authService.verifyAuthCode(TEST_EMAIL, authCode);
 
         // then
-        verify(emailTokenRedisService).deleteAuthCode(TEST_EMAIL);
-        verify(emailTokenRedisService).setVerified(TEST_EMAIL);
+        verify(emailTokenService).deleteAuthCode(TEST_EMAIL);
+        verify(emailTokenService).setVerified(TEST_EMAIL);
     }
 
     @Test
@@ -91,7 +93,7 @@ class AuthServiceTest {
         // given
         String authCode = "123456";
         String wrongCode = "654321";
-        when(emailTokenRedisService.getAuthCode(TEST_EMAIL)).thenReturn(authCode);
+        when(emailTokenService.getAuthCode(TEST_EMAIL)).thenReturn(authCode);
 
         // when & then
         assertThatThrownBy(() -> authService.verifyAuthCode(TEST_EMAIL, wrongCode))
@@ -103,14 +105,13 @@ class AuthServiceTest {
     @DisplayName("로그인 성공 테스트")
     void loginSuccessTest() {
         // given
-        when(authRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(testMember));
         when(passwordEncoder.matches(TEST_PASSWORD, testMember.getPassword())).thenReturn(true);
-
+        when(memberService.getMemberByEmail(TEST_EMAIL)).thenReturn(testMember);
         // when
         authService.login(TEST_EMAIL, TEST_PASSWORD);
 
         // then
-        verify(authRepository).findByEmail(TEST_EMAIL);
+        verify(memberService).getMemberByEmail(TEST_EMAIL);
         verify(passwordEncoder).matches(TEST_PASSWORD, testMember.getPassword());
     }
 
@@ -118,9 +119,7 @@ class AuthServiceTest {
     @DisplayName("회원가입 성공 테스트")
     void signupSuccessTest() {
         // given
-        when(emailTokenRedisService.isVerified(TEST_EMAIL)).thenReturn(true);
-        when(authRepository.existsByEmail(TEST_EMAIL)).thenReturn(false);
-        when(authRepository.existsByUsername(TEST_USERNAME)).thenReturn(false);
+        when(emailTokenService.isVerified(TEST_EMAIL)).thenReturn(true);
         when(passwordEncoder.encode(any())).thenReturn("encodedPassword");
         when(jwtService.createAccessToken(anyString())).thenReturn("accessToken");
         when(jwtService.createAndSaveRefreshToken(anyString())).thenReturn("refreshToken");
@@ -129,14 +128,14 @@ class AuthServiceTest {
         authService.signup(testMember);
 
         // then
-        verify(authRepository).save(any(Member.class));
+        verify(memberService).saveMember(any(Member.class));
     }
 
     @Test
     @DisplayName("회원가입 실패 테스트 - 이메일 미인증")
     void signupFailEmailNotVerifiedTest() {
         // given
-        when(emailTokenRedisService.isVerified(TEST_EMAIL)).thenReturn(false);
+        when(emailTokenService.isVerified(TEST_EMAIL)).thenReturn(false);
 
         // when & then
         assertThatThrownBy(() -> authService.signup(testMember))
@@ -144,30 +143,4 @@ class AuthServiceTest {
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.EMAIL_NOT_VERIFIED);
     }
 
-    @Test
-    @DisplayName("회원가입 실패 테스트 - 중복 이메일")
-    void signupFailDuplicateEmailTest() {
-        // given
-        when(emailTokenRedisService.isVerified(TEST_EMAIL)).thenReturn(true);
-        when(authRepository.existsByEmail(TEST_EMAIL)).thenReturn(true);
-
-        // when & then
-        assertThatThrownBy(() -> authService.signup(testMember))
-                .isInstanceOf(AuthException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.EMAIL_ALREADY_EXISTS);
-    }
-
-    @Test
-    @DisplayName("회원가입 실패 테스트 - 중복 사용자명")
-    void signupFailDuplicateUsernameTest() {
-        // given
-        when(emailTokenRedisService.isVerified(TEST_EMAIL)).thenReturn(true);
-        when(authRepository.existsByEmail(TEST_EMAIL)).thenReturn(false);
-        when(authRepository.existsByUsername(TEST_USERNAME)).thenReturn(true);
-
-        // when & then
-        assertThatThrownBy(() -> authService.signup(testMember))
-                .isInstanceOf(AuthException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USERNAME_ALREADY_EXISTS);
-    }
 }

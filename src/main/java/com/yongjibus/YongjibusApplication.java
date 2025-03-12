@@ -28,29 +28,29 @@ public class YongjibusApplication implements CommandLineRunner{
 		SpringApplication.run(YongjibusApplication.class, args);
 	}
 
-	@Override
-	public void run(String... args) throws Exception {
-		String authCode = authService.sendAuthEmail(email);
-		authService.verifyAuthCode(email, authCode);
+	 @Override
+	 public void run(String... args) throws Exception {
+	 	String authCode = authService.sendAuthEmail(email);
+	 	authService.verifyAuthCode(email, authCode);
 
-		String authCode2 = authService.sendAuthEmail(email2);
-		authService.verifyAuthCode(email2, authCode2);
+	 	String authCode2 = authService.sendAuthEmail(email2);
+	 	authService.verifyAuthCode(email2, authCode2);
 
-		Member member = Member.builder()
-			.email(email)
-			.username(username)
-			.name(name)
-			.password(password)
-			.build();
+	 	Member member = Member.builder()
+	 		.email(email)
+	 		.username(username)
+	 		.name(name)
+	 		.password(password)
+	 		.build();
 
-		Member member2 = Member.builder()
-			.email(email2)
-			.username(username2)
-			.name(name2)
-			.password(password2)
-			.build();
+	 	Member member2 = Member.builder()
+	 		.email(email2)
+	 		.username(username2)
+	 		.name(name2)
+	 		.password(password2)
+	 		.build();
 
-		System.out.println(authService.signup(member));
-		System.out.println(authService.signup(member2));
-	}
+	 	System.out.println(authService.signup(member));
+	 	System.out.println(authService.signup(member2));
+	 }
 }

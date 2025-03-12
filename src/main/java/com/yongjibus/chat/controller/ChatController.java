@@ -82,12 +82,6 @@ public class ChatController {
                 .roomId(message.roomId())
                 .createdAt(message.createdAt())
                 .build();
-        
-        // 서비스 계층으로 메시지 처리 로직 위임
-        // 1. 메시지 저장
-        // 2. 사용자 세션 확인
-        // 3. 온라인 사용자에게는 WebSocket으로 메시지 전송
-        // 4. 오프라인 사용자에게는 FCM으로 알림 전송
         chatService.processAndSendMessage(newMessage);
     }
     

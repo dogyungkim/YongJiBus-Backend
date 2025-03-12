@@ -16,8 +16,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.yongjibus.global.redis.JwtCacheRedisServiceImpl;
-
 import io.jsonwebtoken.security.Keys;
 
 @ExtendWith(MockitoExtension.class)
@@ -27,7 +25,7 @@ class JwtServiceTest {
     private JwtService jwtService;
 
     @Mock
-    private JwtCacheRedisServiceImpl jwtRedisService;
+    private JwtCacheService jwtCacheService;
 
     private final String TEST_EMAIL = "test@example.com";
     private final String TEST_SECRET_KEY = "testSecretKeytestSecretKeytestSecretKeytestSecretKey";
@@ -63,7 +61,7 @@ class JwtServiceTest {
         // then
         assertThat(refreshToken).isNotNull();
         assertThat(jwtService.validateToken(refreshToken)).isTrue();
-        verify(jwtRedisService).setRefreshToken(TEST_EMAIL, refreshToken);
+        verify(jwtCacheService).setRefreshToken(TEST_EMAIL, refreshToken);
     }
 
     @Test
@@ -71,7 +69,7 @@ class JwtServiceTest {
     void validateRefreshTokenSuccessTest() {
         // given
         String refreshToken = "valid-refresh-token";
-        when(jwtRedisService.getRefreshToken(TEST_EMAIL)).thenReturn(refreshToken);
+        when(jwtCacheService.getRefreshToken(TEST_EMAIL)).thenReturn(refreshToken);
         ReflectionTestUtils.invokeMethod(jwtService, "init");
 
         // when & then
@@ -83,7 +81,7 @@ class JwtServiceTest {
     void validateRefreshTokenFailNoStoredTokenTest() {
         // given
         String refreshToken = "valid-refresh-token";
-        when(jwtRedisService.getRefreshToken(TEST_EMAIL)).thenReturn(null);
+        when(jwtCacheService.getRefreshToken(TEST_EMAIL)).thenReturn(null);
 
         // when & then
         assertThat(jwtService.validateRefreshToken(TEST_EMAIL, refreshToken)).isFalse();
@@ -95,7 +93,7 @@ class JwtServiceTest {
         // given
         String refreshToken = "valid-refresh-token";
         String storedToken = "different-refresh-token";
-        when(jwtRedisService.getRefreshToken(TEST_EMAIL)).thenReturn(storedToken);
+        when(jwtCacheService.getRefreshToken(TEST_EMAIL)).thenReturn(storedToken);
 
         // when & then
         assertThat(jwtService.validateRefreshToken(TEST_EMAIL, refreshToken)).isFalse();
@@ -108,8 +106,8 @@ class JwtServiceTest {
         String rotatedToken = jwtService.rotateRefreshToken(TEST_EMAIL);
 
         // then
-        verify(jwtRedisService).deleteRefreshToken(TEST_EMAIL);
-        verify(jwtRedisService).setRefreshToken(TEST_EMAIL, rotatedToken);
+        verify(jwtCacheService).deleteRefreshToken(TEST_EMAIL);
+        verify(jwtCacheService).setRefreshToken(TEST_EMAIL, rotatedToken);
     }
 
     @Test
