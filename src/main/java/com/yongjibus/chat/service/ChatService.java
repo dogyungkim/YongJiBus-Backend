@@ -29,6 +29,7 @@ public class ChatService {
     private final MemberService memberService;
     private final SimpMessagingTemplate messagingTemplate;
     private final WebsocketSessionManager websocketSessionManager;
+    private final FCMNotificationService fcmNotificationService;
 
     @Transactional(readOnly = true)
     public List<ChatRoom> getAllChatRooms() {
@@ -41,8 +42,10 @@ public class ChatService {
                 .name(name)
                 .departureTime(departureTime)
                 .build();
+                
         chatRoomRepository.save(chatRoom);
         setChatRoom(chatRoom, member);
+        chatRoomRepository.save(chatRoom);
 
         return chatRoom;
     }
@@ -54,10 +57,11 @@ public class ChatService {
 
         // 이미 해당 채팅방에 참여 중인지 확인
         if (member.getRoom() != null && member.getRoom().getId().equals(roomId)) {
+            log.info("이미 해당 채팅방에 참여 중입니다.");
             return chatRoom;
         }
         
-        member.setRoom(chatRoom);
+        setChatRoom(chatRoom, member);
         
         return chatRoomRepository.save(chatRoom);
     }
@@ -74,13 +78,12 @@ public class ChatService {
         List<Member> members = chatRoom.getMembers();
         for (Member member : members) {
             if (!websocketSessionManager.isSessionExists(member.getEmail())) {
-                log.info("Member {} has no session", member.getEmail());
+                // 세션 연결이 끊긴 사용자에게 알림 전송
+                fcmNotificationService.sendChatNotification(message, member, chatRoom);
             }
         }
-        // 사용자와 세션이 유지되고 있으면 메시지 전송
+
         messagingTemplate.convertAndSend("/sub/chat/room/" + message.getRoomId(), message);
-        // 사용자와 세션이 해제 된 경우 알림 전송   
-        // sendNotificationToOfflineUsers(message);
     }
 
     @Transactional(readOnly = true)

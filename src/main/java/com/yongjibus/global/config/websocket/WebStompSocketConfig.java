@@ -43,14 +43,4 @@ public class WebStompSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureClientInboundChannel(ChannelRegistration registration) {
         registration.interceptors(stompPreHandler);
     }
-
-    @Bean
-    public TaskScheduler taskScheduler() {
-        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
-        scheduler.setPoolSize(10);
-        scheduler.setThreadNamePrefix("stomp-heartbeat-");
-        scheduler.initialize();
-        return scheduler;
-    }
-
 }

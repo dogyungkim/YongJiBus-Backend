@@ -37,12 +37,9 @@ public class FCMTokenService {
     }
 
     @Transactional
-    public void deactivateToken(String token) {
-        Optional<FCMToken> fcmToken = fcmTokenRepository.findByTokenAndIsActiveTrue(token);
-        fcmToken.ifPresent(t -> {
-            t.deactivate();
-            fcmTokenRepository.save(t);
-        });
+    public void deactivateToken(FCMToken token) {
+        token.deactivate();
+        fcmTokenRepository.save(token);
     }
 
     @Transactional(readOnly = true)

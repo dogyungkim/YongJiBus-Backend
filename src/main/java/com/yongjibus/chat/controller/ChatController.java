@@ -16,11 +16,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import com.yongjibus.auth.domain.MemberDetail;
 import com.yongjibus.chat.domain.ChatMessage;
 import com.yongjibus.chat.domain.ChatRoom;
+import com.yongjibus.chat.domain.FCMToken;
 import com.yongjibus.chat.domain.dto.ChatMessageDTO;
 import com.yongjibus.chat.domain.dto.ChatMessageResponseDTO;
 import com.yongjibus.chat.domain.dto.ChatRoomCreateDTO;
 import com.yongjibus.chat.domain.dto.ChatRoomResponseDTO;
+import com.yongjibus.chat.domain.dto.FcmTokenRegisterRequestDTO;
 import com.yongjibus.chat.service.ChatService;
+import com.yongjibus.chat.service.FCMTokenService;
 import com.yongjibus.global.ApiResponse;
 
 import lombok.RequiredArgsConstructor;
@@ -33,6 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ChatController {
 
     private final ChatService chatService;
+    private final FCMTokenService fcmTokenService;
 
     @GetMapping("/rooms")
     public ResponseEntity<ApiResponse<List<ChatRoomResponseDTO>>> getAllChatRooms() {
@@ -50,29 +54,15 @@ public class ChatController {
             request.getDepartureTime(),
             memberDetail.getMember()
         );
-        
-        ChatRoomResponseDTO response = ChatRoomResponseDTO.builder()
-                .id(chatRoom.getId())
-                .name(chatRoom.getName())
-                .departureTime(chatRoom.getDepartureTime())
-                .createdAt(chatRoom.getCreatedAt())
-                .build();
                 
-        return ApiResponse.success(response);
+        return ApiResponse.success(ChatRoomResponseDTO.from(chatRoom));
     }
 
     @PostMapping("/rooms/{roomId}")
     public ResponseEntity<ApiResponse<ChatRoomResponseDTO>> joinChatRoom(@AuthenticationPrincipal MemberDetail memberDetail, @PathVariable("roomId") Long roomId) {
         ChatRoom chatRoom = chatService.joinChatRoom(roomId, memberDetail.getMember());
         
-        ChatRoomResponseDTO response = ChatRoomResponseDTO.builder()
-                .id(chatRoom.getId())
-                .name(chatRoom.getName())
-                .departureTime(chatRoom.getDepartureTime())
-                .createdAt(chatRoom.getCreatedAt())
-                .build();
-
-        return ApiResponse.success(response);
+        return ApiResponse.success(ChatRoomResponseDTO.from(chatRoom));
     }
 
     @GetMapping("/rooms/{roomId}/messages")
@@ -99,5 +89,37 @@ public class ChatController {
         // 3. 온라인 사용자에게는 WebSocket으로 메시지 전송
         // 4. 오프라인 사용자에게는 FCM으로 알림 전송
         chatService.processAndSendMessage(newMessage);
+    }
+    
+    /**
+     * FCM 토큰 등록 엔드포인트
+     * 클라이언트에서 FCM 토큰을 서버로 전송하여 사용자와 연결
+     */
+    @PostMapping("/fcm-token")
+    public ResponseEntity<ApiResponse<String>> registerFcmToken(
+            @AuthenticationPrincipal MemberDetail memberDetail,
+            @RequestBody FcmTokenRegisterRequestDTO requestDTO) {
+        
+        log.info("FCM 토큰 등록 요청: 사용자 {}", memberDetail.getUsername());
+        
+        fcmTokenService.saveToken(memberDetail.getMember(), requestDTO.token());
+        
+        return ApiResponse.success("FCM 토큰 등록 성공");
+    }
+    
+    /**
+     * FCM 토큰 삭제 엔드포인트
+     * 로그아웃 시 FCM 토큰 제거
+     */
+    @PostMapping("/fcm-token/remove")
+    public ResponseEntity<ApiResponse<String>> removeFcmToken(
+            @AuthenticationPrincipal MemberDetail memberDetail) {
+        
+        log.info("FCM 토큰 삭제 요청: 사용자 {}", memberDetail.getUsername());
+        FCMToken token = fcmTokenService.getActiveTokenByMember(memberDetail.getMember());
+
+        fcmTokenService.deactivateToken(token);
+        
+        return ApiResponse.success("FCM 토큰 삭제 성공");
     }
 }
