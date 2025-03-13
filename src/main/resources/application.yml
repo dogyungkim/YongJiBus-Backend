@@ -39,6 +39,8 @@ spring:
           timeout: 5000
           write-timeout: 5000
     auth-code-expiration-minutes: 10
+    report:
+      to: ${REPORT_TO}
   data:
     redis:
       host: localhost
@@ -49,8 +51,8 @@ secrets:
   
 jwt:
   secret: ${JWT_SECRET}
-  access-token-validity: 3600
-  refresh-token-validity: 604800000
+  access-token-validity: 36000000    # 10시간 (10 * 60 * 60 * 1000 밀리초)
+  refresh-token-validity: 604800000  # 7일 (7 * 24 * 60 * 60 * 1000 밀리초)
 
 management:  
   endpoints:  

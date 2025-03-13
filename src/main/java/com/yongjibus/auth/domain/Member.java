@@ -27,9 +27,11 @@ public class Member {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    //실제 이름
     @Column(nullable = false, length = 10)
     private String name;
 
+    //닉네임
     @Column(nullable = false, unique = true, length = 10)
     private String username;
 
@@ -59,6 +61,12 @@ public class Member {
         this.email = email;
         this.password = password;
         this.isDeleted = false;
+    }
+
+    @Builder
+    public Member(Long id, String username) {
+        this.id = id;
+        this.username = username;
     }
 
     public void delete() {
