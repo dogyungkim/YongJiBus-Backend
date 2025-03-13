@@ -14,7 +14,7 @@ public class InMemoryEmailTokenService implements EmailTokenService {
     // 인증 코드 캐시 (기본 만료 시간: 5분)
     private final Cache<String, String> authCodeCache;
     
-    // 인증 상태 캐시 (기본 만료 시간: 30분)
+    // 인증 상태 캐시 (기본 만료 시간: 10분)
     private final Cache<String, Boolean> verifiedCache;
 
     public InMemoryEmailTokenService(

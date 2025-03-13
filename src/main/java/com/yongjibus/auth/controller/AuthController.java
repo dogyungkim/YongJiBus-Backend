@@ -3,6 +3,7 @@ package com.yongjibus.auth.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,7 +14,6 @@ import com.yongjibus.auth.domain.dto.EmailAuthCodeRequestDTO;
 import com.yongjibus.auth.domain.dto.EmailVerifyRequestDTO;
 import com.yongjibus.auth.domain.dto.LoginRequestDTO;
 import com.yongjibus.auth.domain.dto.SignupRequestDTO;
-import com.yongjibus.auth.domain.dto.TokenRefreshRequestDTO;
 import com.yongjibus.auth.domain.MemberDetail;
 import com.yongjibus.auth.domain.dto.AuthTokenDTO;
 import com.yongjibus.auth.service.AuthService;
@@ -59,8 +59,8 @@ public class AuthController {
     }
     
     @PostMapping("/token/refresh")
-    public ResponseEntity<ApiResponse<AuthTokenDTO>> refreshAccessToken(@Valid @RequestBody TokenRefreshRequestDTO dto) {
-        AuthTokenDTO tokenResponse = authService.refreshAccessToken(dto.refreshToken());
+    public ResponseEntity<ApiResponse<AuthTokenDTO>> refreshAccessToken(@AuthenticationPrincipal MemberDetail memberDetail, Authentication authentication) {
+        AuthTokenDTO tokenResponse = authService.refreshAccessToken(authentication.getCredentials().toString(), memberDetail.getMember());
         return ApiResponse.success(tokenResponse);
     }
     

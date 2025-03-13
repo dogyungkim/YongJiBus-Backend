@@ -15,6 +15,7 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import io.jsonwebtoken.ExpiredJwtException;
 
 @RequiredArgsConstructor
 @Service
@@ -47,13 +48,13 @@ public class JwtService {
     }
 
     /**
-     * Refresh 토큰을 생성하고 Redis에 저장합니다.
+     * Refresh 토큰을 생성하고 저장합니다.
      * 
      * @param email 사용자 이메일
      * @return 생성된 Refresh 토큰
      */
     public String createAndSaveRefreshToken(String email) {
-        String refreshToken = createRefreshToken();
+        String refreshToken = createRefreshToken(email);
         jwtCacheService.setRefreshToken(email, refreshToken);
         return refreshToken;
     }
@@ -69,26 +70,44 @@ public class JwtService {
 			.compact();
 	}
 
-    private String createRefreshToken() {
+    private String createRefreshToken(String email) {
         Date now = new Date();
 
         return Jwts.builder()
             .setSubject(REFRESH_TOKEN_SUBJECT)
             .setExpiration(new Date(now.getTime() + refreshTokenExpirationPeriod))
+            .claim(EMAIL_CLAIM, email)
             .signWith(key, SignatureAlgorithm.HS256)
             .compact();
     }
     
     /**
-     * Redis에 저장된 Refresh 토큰을 검증합니다.
+     * 저장된 Refresh 토큰을 검증합니다.
      * 
-     * @param email 사용자 이메일
      * @param refreshToken 검증할 Refresh 토큰
      * @return 토큰 유효성 여부
      */
-    public boolean validateRefreshToken(String email, String refreshToken) {
+    public boolean validateRefreshToken(String refreshToken) {
+        if (!validateToken(refreshToken)) {
+            return false;
+        }
+
+        String email = getEmailFromToken(refreshToken);
         String storedToken = jwtCacheService.getRefreshToken(email);
-        return storedToken != null && storedToken.equals(refreshToken) && validateToken(refreshToken);
+        return storedToken != null && storedToken.equals(refreshToken);
+    }
+
+    public boolean validateAccessToken(String accessToken) {
+        return !isTokenExpired(accessToken);
+    }
+
+    private boolean validateToken(String token) {
+        try {
+            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
+            return !isTokenExpired(token);
+        } catch (JwtException e) {
+            return false;
+        }
     }
     
     /**
@@ -106,24 +125,28 @@ public class JwtService {
         jwtCacheService.deleteRefreshToken(email);
     }
 
-    public boolean validateToken(String token) {
+    /**
+     * 토큰이 만료되었는지 확인합니다.
+     * 
+     * @param token 검사할 JWT 토큰
+     * @return 토큰이 만료되었으면 true, 아직 유효하면 false, 토큰이 유효하지 않으면 true
+     */
+    private boolean isTokenExpired(String token) {
         try {
-            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
+            Date expiration = Jwts
+                .parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getExpiration();
+            
+            return expiration.before(new Date());
+        } catch (ExpiredJwtException e) {
             return true;
-        } catch (JwtException e) {
-            return false;
+        } catch (JwtException | IllegalArgumentException e) {
+            return true;
         }
-    }
-
-    public boolean isTokenExpired(String token) {
-        return Jwts
-            .parserBuilder()
-            .setSigningKey(key)
-            .build()
-            .parseClaimsJws(token)
-            .getBody()
-            .getExpiration()
-            .before(new Date());
     }
 
     public String getEmailFromToken(String token) {

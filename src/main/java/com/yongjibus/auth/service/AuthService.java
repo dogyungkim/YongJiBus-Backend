@@ -119,19 +119,16 @@ public class AuthService {
      * @return 새로 발급된 AccessToken
      * @throws AuthException RefreshToken이 유효하지 않을 경우
      */
-    public AuthTokenDTO refreshAccessToken(String refreshToken) {
-        if (!jwtService.validateToken(refreshToken)) {
-            throw new AuthException(ErrorCode.INVALID_REFRESH_TOKEN);
-        }
-
-        if (jwtService.isTokenExpired(refreshToken)) {
+    public AuthTokenDTO refreshAccessToken(String refreshToken, Member member) {
+        if (!jwtService.validateRefreshToken(refreshToken)) {
             throw new AuthException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
         
-        String email = jwtService.getEmailFromToken(refreshToken);
+        String email = member.getEmail();
         String newAccessToken = jwtService.createAccessToken(email);
+        String newRefreshToken = jwtService.createAndSaveRefreshToken(email);
         
-        return new AuthTokenDTO(newAccessToken, null);
+        return new AuthTokenDTO(newAccessToken, newRefreshToken);
     }
 
     /**

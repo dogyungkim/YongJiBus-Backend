@@ -32,6 +32,7 @@ public class FCMNotificationService {
             String body = senderName + ": " + chatMessage.getContent();
             Map<String, String> data = new HashMap<>();
 
+            data.put("type", "chat");
             data.put("chatRoomId", chatRoom.getId().toString());
             data.put("messageId", chatMessage.getId().toString());
             data.put("senderName", senderName);

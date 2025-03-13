@@ -1,6 +1,8 @@
 package com.yongjibus.global.jwt;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -10,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yongjibus.auth.service.MemberDetailService;
 import com.yongjibus.global.exception.AuthException;
 import com.yongjibus.global.exception.ErrorCode;
@@ -41,39 +44,65 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        String path = request.getRequestURI();
-        
-        if (EXCLUDED_ENDPOINTS.stream().anyMatch(path::startsWith) && !path.startsWith("/auth/logout")) {
+        String path = request.getRequestURI(); 
+        try {
+            // 토큰 재발급 요청시
+            if (path.equals("/auth/token/refresh")) {
+
+                String refreshToken = jwtService.extractToken(request)
+                    .orElseThrow(() -> new AuthException(ErrorCode.INVALID_REFRESH_TOKEN));
+                
+                if (jwtService.validateRefreshToken(refreshToken)) {
+                    String email = jwtService.getEmailFromToken(refreshToken);
+                    UserDetails memberDetail = memberDetailService.loadUserByUsername(email);
+                    Authentication authentication = new UsernamePasswordAuthenticationToken(memberDetail, refreshToken, memberDetail.getAuthorities());
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    filterChain.doFilter(request, response);
+                    return;
+                } else {
+                    throw new AuthException(ErrorCode.INVALID_REFRESH_TOKEN);
+                }
+            }
+
+            if (EXCLUDED_ENDPOINTS.stream().anyMatch(path::startsWith) && !path.startsWith("/auth/logout")) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            // 1. 토큰 유효성 검증
+            String accessToken = jwtService.extractToken(request)
+                .orElseThrow(() -> new AuthException(ErrorCode.INVALID_ACCESS_TOKEN));
+
+            // 2. 토큰 유효성 검증
+            if (!jwtService.validateAccessToken(accessToken)) {
+                throw new AuthException(ErrorCode.EXPIRED_ACCESS_TOKEN);
+            }
+
+            // 3. 토큰 파싱
+            String email = jwtService.getEmailFromToken(accessToken);
+            if (email != null) {
+                UserDetails memberDetail = memberDetailService.loadUserByUsername(email);
+                Authentication authentication = new UsernamePasswordAuthenticationToken(memberDetail, null, memberDetail.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
+
             filterChain.doFilter(request, response);
+        } catch (AuthException e) {
+            sendErrorResponse(response, e.getErrorCode());
             return;
         }
-
-        // 1. 토큰 유효성 검증
-        log.info("JwtAuthenticationProcessingFilter doFilterInternal");
-        String accessToken = jwtService.extractToken(request)
-            .orElse(null);
-
-        // 2. 토큰 유효성 검증
-        if (accessToken != null && !jwtService.validateToken(accessToken)) {
-            throw new AuthException(ErrorCode.INVALID_ACCESS_TOKEN);
-        }
-
-        // 3. 토큰 만료 검증
-        if (accessToken != null && jwtService.isTokenExpired(accessToken)) {
-            throw new AuthException(ErrorCode.EXPIRED_ACCESS_TOKEN);
-        }
-
-        // 4. 토큰 파싱
-        String email = jwtService.getEmailFromToken(accessToken);
-        log.info("email: {}", email);
-        if (email != null) {
-            UserDetails memberDetail = memberDetailService.loadUserByUsername(email);
-            Authentication authentication = new UsernamePasswordAuthenticationToken(memberDetail, null, memberDetail.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-        }
-
-        filterChain.doFilter(request, response);
     }
-    
-    
+
+    private void sendErrorResponse(HttpServletResponse response, ErrorCode errorCode) throws IOException {
+
+        response.setStatus(errorCode.getStatus().value());
+        response.setContentType("application/json;charset=UTF-8");
+        
+        Map<String, Object> errorDetails = new HashMap<>();
+        errorDetails.put("code", errorCode.name());
+        errorDetails.put("message", errorCode.getMessage());
+        errorDetails.put("status", errorCode.getStatus());
+        
+        response.getWriter().write(new ObjectMapper().writeValueAsString(errorDetails));
+    }
 }

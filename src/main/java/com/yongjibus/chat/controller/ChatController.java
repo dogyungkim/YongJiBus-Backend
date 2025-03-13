@@ -3,6 +3,8 @@ package com.yongjibus.chat.controller;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,6 +27,7 @@ import com.yongjibus.chat.domain.dto.FcmTokenRegisterRequestDTO;
 import com.yongjibus.chat.service.ChatService;
 import com.yongjibus.chat.service.FCMTokenService;
 import com.yongjibus.global.ApiResponse;
+import com.yongjibus.global.SliceResponse;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -66,12 +69,20 @@ public class ChatController {
     }
 
     @GetMapping("/rooms/{roomId}/messages")
-    public ResponseEntity<ApiResponse<List<ChatMessageResponseDTO>>> getChatMessages(@PathVariable("roomId") Long roomId) {
-        List<ChatMessageResponseDTO> messages = chatService.getChatMessages(roomId)
-                .stream()
-                .map(ChatMessageResponseDTO::from)
-                .collect(Collectors.toList());
-        return ApiResponse.success(messages);
+    public ResponseEntity<ApiResponse<SliceResponse<ChatMessageResponseDTO>>> getChatMessages(
+        @PathVariable("roomId") Long roomId,
+        Pageable pageable
+    ) {
+        Slice<ChatMessageResponseDTO> messages = chatService.getChatMessages(roomId, pageable)
+                .map(ChatMessageResponseDTO::from);
+                
+        return ApiResponse.success(SliceResponse.from(messages));
+    }
+
+    @GetMapping("/rooms/{roomId}")
+    public ResponseEntity<ApiResponse<ChatRoomResponseDTO>> getChatRoom(@PathVariable("roomId") Long roomId) {
+        ChatRoom chatRoom = chatService.getChatRoom(roomId);
+        return ApiResponse.success(ChatRoomResponseDTO.from(chatRoom));
     }
 
     @MessageMapping("/chat/message")

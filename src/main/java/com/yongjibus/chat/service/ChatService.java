@@ -3,6 +3,8 @@ package com.yongjibus.chat.service;
 import java.time.LocalTime;
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,6 +69,12 @@ public class ChatService {
         return chatRoomRepository.save(chatRoom);
     }
 
+    @Transactional(readOnly = true)
+    public ChatRoom getChatRoom(Long roomId) {
+        return chatRoomRepository.findById(roomId)
+            .orElseThrow(() -> new ChatException(ErrorCode.CHAT_ROOM_NOT_FOUND));
+    }
+
     @Transactional
     public void processAndSendMessage(ChatMessage message) {
         //메시지 저장
@@ -87,8 +95,8 @@ public class ChatService {
     }
 
     @Transactional(readOnly = true)
-    public List<ChatMessage> getChatMessages(Long roomId) {
-        return chatRepository.findByRoomId(roomId);
+    public Slice<ChatMessage> getChatMessages(Long roomId, Pageable pageable) {
+        return chatRepository.findByRoomId(roomId, pageable);
     }
 
 

@@ -48,7 +48,7 @@ class JwtServiceTest {
 
         // then
         assertThat(accessToken).isNotNull();
-        assertThat(jwtService.validateToken(accessToken)).isTrue();
+        assertThat(jwtService.validateAccessToken(accessToken)).isTrue();
         assertThat(jwtService.getEmailFromToken(accessToken)).isEqualTo(TEST_EMAIL);
     }
 
@@ -57,10 +57,11 @@ class JwtServiceTest {
     void createAndSaveRefreshTokenTest() {
         // when
         String refreshToken = jwtService.createAndSaveRefreshToken(TEST_EMAIL);
+        when(jwtCacheService.getRefreshToken(TEST_EMAIL)).thenReturn(refreshToken);
 
         // then
         assertThat(refreshToken).isNotNull();
-        assertThat(jwtService.validateToken(refreshToken)).isTrue();
+        assertThat(jwtService.validateRefreshToken(refreshToken)).isTrue();
         verify(jwtCacheService).setRefreshToken(TEST_EMAIL, refreshToken);
     }
 
@@ -68,12 +69,13 @@ class JwtServiceTest {
     @DisplayName("리프레시 토큰 검증 성공 테스트")
     void validateRefreshTokenSuccessTest() {
         // given
-        String refreshToken = "valid-refresh-token";
-        when(jwtCacheService.getRefreshToken(TEST_EMAIL)).thenReturn(refreshToken);
-        ReflectionTestUtils.invokeMethod(jwtService, "init");
+        String refreshToken = jwtService.createAndSaveRefreshToken(TEST_EMAIL);
 
-        // when & then
-        assertThat(jwtService.validateRefreshToken(TEST_EMAIL, refreshToken)).isFalse();
+        // when
+        when(jwtCacheService.getRefreshToken(TEST_EMAIL)).thenReturn(refreshToken);
+
+        // then
+        assertThat(jwtService.validateRefreshToken(refreshToken)).isTrue();
     }
 
     @Test
@@ -81,22 +83,21 @@ class JwtServiceTest {
     void validateRefreshTokenFailNoStoredTokenTest() {
         // given
         String refreshToken = "valid-refresh-token";
-        when(jwtCacheService.getRefreshToken(TEST_EMAIL)).thenReturn(null);
 
         // when & then
-        assertThat(jwtService.validateRefreshToken(TEST_EMAIL, refreshToken)).isFalse();
+        assertThat(jwtService.validateRefreshToken(refreshToken)).isFalse();
     }
 
     @Test
     @DisplayName("리프레시 토큰 검증 실패 테스트 - 토큰 불일치")
     void validateRefreshTokenFailTokenMismatchTest() {
         // given
-        String refreshToken = "valid-refresh-token";
+        String refreshToken = jwtService.createAndSaveRefreshToken(TEST_EMAIL);
         String storedToken = "different-refresh-token";
         when(jwtCacheService.getRefreshToken(TEST_EMAIL)).thenReturn(storedToken);
 
         // when & then
-        assertThat(jwtService.validateRefreshToken(TEST_EMAIL, refreshToken)).isFalse();
+        assertThat(jwtService.validateRefreshToken(refreshToken)).isFalse();
     }
 
     @Test

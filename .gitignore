@@ -58,3 +58,5 @@ build/
 HELP.md
 .env
 src/main/resources/firebase/
+
+YongJiBus-Features.md

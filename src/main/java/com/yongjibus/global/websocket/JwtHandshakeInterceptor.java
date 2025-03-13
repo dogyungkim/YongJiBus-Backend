@@ -29,7 +29,7 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
             try {
-                if (jwtService.validateToken(token)) {
+                if (jwtService.validateAccessToken(token)) {
                     attributes.put("email", jwtService.getEmailFromToken(token));
                     return true;
                 }

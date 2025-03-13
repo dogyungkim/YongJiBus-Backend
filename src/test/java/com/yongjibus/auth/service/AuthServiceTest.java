@@ -2,9 +2,11 @@ package com.yongjibus.auth.service;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
 
@@ -18,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.yongjibus.auth.domain.Member;
+import com.yongjibus.auth.domain.dto.AuthTokenDTO;
 import com.yongjibus.auth.repository.MemberRepository;
 import com.yongjibus.global.exception.AuthException;
 import com.yongjibus.global.exception.ErrorCode;
@@ -143,4 +146,83 @@ class AuthServiceTest {
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.EMAIL_NOT_VERIFIED);
     }
 
+    @Test
+    @DisplayName("액세스 토큰 갱신 성공 테스트")
+    void refreshAccessTokenSuccessTest() {
+        // given
+        String refreshToken = "validRefreshToken";
+        when(jwtService.validateRefreshToken(refreshToken)).thenReturn(true);
+        when(jwtService.createAccessToken(TEST_EMAIL)).thenReturn("newAccessToken");
+        when(jwtService.createAndSaveRefreshToken(TEST_EMAIL)).thenReturn("newRefreshToken");
+
+        // when
+       AuthTokenDTO authTokenDTO = authService.refreshAccessToken(refreshToken, testMember);
+
+        // then
+        verify(jwtService).validateRefreshToken(refreshToken);
+        verify(jwtService).createAccessToken(TEST_EMAIL);
+        verify(jwtService).createAndSaveRefreshToken(TEST_EMAIL);
+        assertThat(authTokenDTO.accessToken()).isEqualTo("newAccessToken");
+        assertThat(authTokenDTO.refreshToken()).isEqualTo("newRefreshToken");
+    }
+
+    @Test
+    @DisplayName("액세스 토큰 갱신 실패 테스트 - 유효하지 않은 리프레시 토큰")
+    void refreshAccessTokenFailInvalidTokenTest() {
+        // given
+        String invalidRefreshToken = "invalidRefreshToken";
+        when(jwtService.validateRefreshToken(invalidRefreshToken)).thenReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> authService.refreshAccessToken(invalidRefreshToken, testMember))
+                .isInstanceOf(AuthException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_REFRESH_TOKEN);
+    }
+
+    @Test
+    @DisplayName("로그아웃 성공 테스트")
+    void logoutSuccessTest() {
+        // when
+        authService.logout(testMember);
+
+        // then
+        verify(jwtService).deleteRefreshToken(TEST_EMAIL);
+        verify(memberService).saveMember(testMember);
+        // Member의 delete 메서드가 호출되었는지 확인하기 어려우므로 상태 변경 확인
+        // ReflectionTestUtils를 사용하여 private 필드 확인 가능
+    }
+
+    @Test
+    @DisplayName("로그인 실패 테스트 - 잘못된 비밀번호")
+    void loginFailInvalidPasswordTest() {
+        // given
+        String wrongPassword = "wrongPassword";
+        when(memberService.getMemberByEmail(TEST_EMAIL)).thenReturn(testMember);
+        when(passwordEncoder.matches(wrongPassword, testMember.getPassword())).thenReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> authService.login(TEST_EMAIL, wrongPassword))
+                .isInstanceOf(AuthException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_CREDENTIALS);
+    }
+
+    @Test
+    @DisplayName("회원가입 시 비밀번호 암호화 테스트")
+    void signupPasswordEncodingTest() {
+        // given
+        when(emailTokenService.isVerified(TEST_EMAIL)).thenReturn(true);
+        when(passwordEncoder.encode(TEST_PASSWORD)).thenReturn("encodedPassword");
+        when(jwtService.createAccessToken(anyString())).thenReturn("accessToken");
+        when(jwtService.createAndSaveRefreshToken(anyString())).thenReturn("refreshToken");
+
+        // when
+        authService.signup(testMember);
+
+        // then
+        verify(passwordEncoder).encode(TEST_PASSWORD);
+        // Member 객체가 저장될 때 암호화된 비밀번호를 가지고 있는지 확인
+        verify(memberService).saveMember(argThat(member -> 
+            "encodedPassword".equals(member.getPassword())
+        ));
+    }
 }

@@ -33,7 +33,7 @@ public class StompPreHandler implements ChannelInterceptor {
 
             if (token != null && token.startsWith("Bearer ")) { 
                 token = token.substring(7);
-                if (jwtService.validateToken(token)) {
+                if (jwtService.validateAccessToken(token)) {
                     String email = jwtService.getEmailFromToken(token);
                     websocketSessionManager.addSession(accessor.getSessionId(), email);
                 } else {
