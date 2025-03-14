@@ -54,3 +54,8 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+test {
+    systemProperty 'management.endpoints.enabled-by-default', 'false'
+    systemProperty 'management.metrics.enable.all', 'false'
+}

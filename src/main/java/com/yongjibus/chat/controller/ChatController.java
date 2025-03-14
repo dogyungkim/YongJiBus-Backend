@@ -1,5 +1,6 @@
 package com.yongjibus.chat.controller;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -88,6 +89,7 @@ public class ChatController {
     @MessageMapping("/chat/message")
     public void sendMessage(@RequestBody ChatMessageDTO message) {
         ChatMessage newMessage = ChatMessage.builder()
+                .messageType(message.messageType() != null ? message.messageType() : ChatMessage.MessageType.MESSAGE)
                 .content(message.content())
                 .sender(message.sender())
                 .roomId(message.roomId())
@@ -126,5 +128,18 @@ public class ChatController {
         fcmTokenService.deactivateToken(token);
         
         return ApiResponse.success("FCM 토큰 삭제 성공");
+    }
+
+    /**
+     * 채팅방 퇴장 엔드포인트
+     */
+    @PostMapping("/rooms/{roomId}/leave")
+    public ResponseEntity<ApiResponse<String>> leaveChatRoom(
+            @AuthenticationPrincipal MemberDetail memberDetail,
+            @PathVariable("roomId") Long roomId) {
+        
+        chatService.leaveChatRoom(roomId, memberDetail.getMember());
+        
+        return ApiResponse.success("채팅방 퇴장 성공");
     }
 }

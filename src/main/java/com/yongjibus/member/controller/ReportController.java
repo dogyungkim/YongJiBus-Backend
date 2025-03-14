@@ -15,10 +15,11 @@ import com.yongjibus.member.domain.MemberReport;
 import com.yongjibus.member.service.ReportService;
 
 import lombok.RequiredArgsConstructor;
-
+import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/report")
 @RequiredArgsConstructor
+@Slf4j
 public class ReportController {
 
   private final ReportService reportService;
@@ -36,8 +37,8 @@ public class ReportController {
       .reporter(reporter)
       .build();
 
-    ///TODO : 비동기 처리로 하는것이 빠를거같다.
-    reportService.createReport(userReport, request.reportedUserId());
+    //TODO : 비동기 처리로 하는것이 빠를거같다.
+    reportService.createReport(userReport, request.reportedUserName());
 
     return ApiResponse.success("success");
   }

@@ -20,8 +20,8 @@ public class ReportService {
   private final MemberReportRepository memberReportRepository;
   private final MemberRepository memberRepository;
 
-  public void createReport(MemberReport memberReport, Long reportedMemberId) {
-    Optional<Member> reportedMember = memberRepository.findById(reportedMemberId);
+  public void createReport(MemberReport memberReport, String reportedUsername) {
+    Optional<Member> reportedMember = memberRepository.findByUsername(reportedUsername);
 
     if (reportedMember.isEmpty()) {
       throw new RuntimeException("신고 대상 멤버가 존재하지 않습니다.");
@@ -31,6 +31,6 @@ public class ReportService {
     // 신고 처리
     memberReportRepository.save(memberReport);
     // 신고 이메일 전송
-    emailService.sendReportEmail(memberReport);
+    //emailService.sendReportEmail(memberReport);
   }
 }

@@ -1,8 +1,7 @@
 package com.yongjibus.member.controller.dto;
 
 public record ReportUserRequestDTO(
-  Long reportedUserId,
-  String reportedUsername,
+  String reportedUserName,
   String reason,
   Long roomId
 ) {

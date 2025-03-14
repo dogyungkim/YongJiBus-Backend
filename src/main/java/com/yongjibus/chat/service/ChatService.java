@@ -1,10 +1,14 @@
 package com.yongjibus.chat.service;
 
 import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,7 +70,43 @@ public class ChatService {
         
         setChatRoom(chatRoom, member);
         
+        // 입장 메시지 생성 및 전송
+        ChatMessage enterMessage = ChatMessage.builder()
+                .messageType(ChatMessage.MessageType.ENTER)
+                .content(member.getUsername() + "님이 입장하셨습니다.")
+                .sender(member.getUsername())
+                .roomId(roomId)
+                .createdAt(LocalDateTime.now())
+                .build();
+        processAndSendMessage(enterMessage);
+        
         return chatRoomRepository.save(chatRoom);
+    }
+
+    @Transactional
+    public void leaveChatRoom(Long roomId, Member member) {
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId)
+            .orElseThrow(() -> new ChatException(ErrorCode.CHAT_ROOM_NOT_FOUND));
+        
+        // 해당 채팅방에 참여 중인지 확인
+        if (member.getRoom() == null || !member.getRoom().getId().equals(roomId)) {
+            log.info("해당 채팅방에 참여 중이 아닙니다.");
+            return;
+        }
+        
+        // 채팅방에서 나가기
+        member.setRoom(null);
+        memberService.saveMember(member);
+        
+        // 퇴장 메시지 생성 및 전송
+        ChatMessage leaveMessage = ChatMessage.builder()
+                .messageType(ChatMessage.MessageType.LEAVE)
+                .content(member.getUsername() + "님이 퇴장하셨습니다.")
+                .sender(member.getUsername())
+                .roomId(roomId)
+                .createdAt(LocalDateTime.now())
+                .build();
+        processAndSendMessage(leaveMessage);
     }
 
     @Transactional(readOnly = true)
@@ -77,18 +117,20 @@ public class ChatService {
 
     @Transactional
     public void processAndSendMessage(ChatMessage message) {
-        //메시지 저장
+        // 메시지 저장
         chatRepository.save(message);
 
-        //소켓 관련 로직
+        // 소켓 관련 로직
         ChatRoom chatRoom = chatRoomRepository.findById(message.getRoomId())
             .orElseThrow(() -> new ChatException(ErrorCode.CHAT_ROOM_NOT_FOUND));
         
         List<Member> members = chatRoom.getMembers();
         for (Member member : members) {
             if (!websocketSessionManager.isSessionExists(member.getEmail())) {
-                // 세션 연결이 끊긴 사용자에게 알림 전송
-                fcmNotificationService.sendChatNotification(message, member, chatRoom);
+                // 일반 채팅 메시지인 경우에만 알림 전송 (입장/퇴장 메시지는 알림 제외)
+                if (message.getMessageType() == ChatMessage.MessageType.MESSAGE) {
+                    fcmNotificationService.sendChatNotification(message, member, chatRoom);
+                }
             }
         }
         messagingTemplate.convertAndSend("/sub/chat/room/" + message.getRoomId(), message);
@@ -96,7 +138,19 @@ public class ChatService {
 
     @Transactional(readOnly = true)
     public Slice<ChatMessage> getChatMessages(Long roomId, Pageable pageable) {
-        return chatRepository.findByRoomId(roomId, pageable);
+        // 최신순으로 데이터를 가져옴
+        Slice<ChatMessage> messages = chatRepository.findByRoomIdOrderByCreatedAtDesc(roomId, pageable);
+        
+        // 결과를 리스트로 변환하고 순서를 뒤집음
+        List<ChatMessage> reversedContent = new ArrayList<>(messages.getContent());
+        Collections.reverse(reversedContent);
+        
+        // 뒤집은 리스트로 새로운 SliceImpl 생성
+        return new SliceImpl<>(
+            reversedContent, 
+            messages.getPageable(), 
+            messages.hasNext()
+        );
     }
 
 

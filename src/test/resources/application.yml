@@ -45,7 +45,7 @@ spring:
     redis:
       host: localhost
       port: 6379
-      
+
 secrets:
   open_api_key: ${OPEN_API_KEY}
   
@@ -53,12 +53,3 @@ jwt:
   secret: ${JWT_SECRET}
   access-token-validity: 36000000    # 10시간 (10 * 60 * 60 * 1000 밀리초)
   refresh-token-validity: 604800000  # 7일 (7 * 24 * 60 * 60 * 1000 밀리초)
-
-management:  
-  endpoints:  
-    prometheus:  
-      enabled: true  
-    web:  
-      exposure:  
-        include: prometheus
-
