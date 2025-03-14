@@ -22,7 +22,7 @@ import com.yongjibus.arrivaltime.domain.SaveArrivalTimeRequestDTO;
 import com.yongjibus.arrivaltime.domain.GetArrivalTimeRequestDTO;
 import com.yongjibus.arrivaltime.repository.ArrivalTimeRepository;
 import com.yongjibus.arrivaltime.service.ArrivalTimeService;
-import com.yongjibus.exception.DateInfoNotFoundException;
+import com.yongjibus.global.exception.DateInfoNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 public class ArrivalTimeServiceTest {
@@ -89,7 +89,7 @@ public class ArrivalTimeServiceTest {
             () -> arrivalTimeService.getArrivalTimeByBusIdAndDate(request));
         
         assertEquals(
-            String.format("실제 버스 도착 시간 정보가 없습니다.", busId, date), 
+            String.format("%s의 날짜 정보를 찾을 수 없습니다.", date), 
             exception.getMessage()
         );
     }
