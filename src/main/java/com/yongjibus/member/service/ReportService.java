@@ -31,6 +31,6 @@ public class ReportService {
     // 신고 처리
     memberReportRepository.save(memberReport);
     // 신고 이메일 전송
-    //emailService.sendReportEmail(memberReport);
+    emailService.sendReportEmail(memberReport);
   }
 }

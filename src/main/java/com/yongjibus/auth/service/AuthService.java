@@ -34,7 +34,7 @@ public class AuthService {
         log.info("인증 코드 : {}", authCode);
 
         emailTokenService.setAuthCode(email, authCode);
-        //emailService.sendAuthEmail(email, authCode);
+        emailService.sendAuthEmail(email, authCode);
         return authCode;
     }
 
