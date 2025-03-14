@@ -21,6 +21,9 @@ WORKDIR /app
 
 COPY --from=build /app/build/libs/*.jar app.jar
 
+ENV SPRING_PROFILES_ACTIVE=prod
+ENV JAVA_OPTS=""
+
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dspring.profiles.active=$SPRING_PROFILES_ACTIVE -jar app.jar"]

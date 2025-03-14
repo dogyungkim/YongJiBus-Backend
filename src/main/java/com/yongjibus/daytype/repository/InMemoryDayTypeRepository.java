@@ -7,6 +7,7 @@ import com.yongjibus.daytype.domain.DateInfo;
 import com.yongjibus.global.exception.DateInfoNotFoundException;
 import com.yongjibus.global.exception.ErrorCode;
 
+
 import jakarta.annotation.PostConstruct;
 
 import java.time.DayOfWeek;
@@ -19,7 +20,6 @@ import java.util.stream.IntStream;
 @RequiredArgsConstructor
 public class InMemoryDayTypeRepository implements DayTypeRepository {
 
-    // List로 HolidayInfo를 저장
     private static final List<DateInfo> store = new CopyOnWriteArrayList<>();
 
     @PostConstruct

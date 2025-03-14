@@ -3,10 +3,11 @@ package com.yongjibus.daytype.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.yongjibus.daytype.repository.DayTypeRepository;
-import com.yongjibus.daytype.client.HolidayApiClient;
+
 import com.yongjibus.daytype.domain.DateInfo;
 import com.yongjibus.daytype.domain.HolidayInfoExternalResponseDTO;
+import com.yongjibus.daytype.repository.DayTypeRepository;
+import com.yongjibus.daytype.client.HolidayApiClient;
 import com.yongjibus.vacation.service.VacationService;
 
 import jakarta.annotation.PostConstruct;
@@ -58,7 +59,7 @@ public class DayTypeService {
             HolidayInfoExternalResponseDTO dto = parseHolidayXmlResponse(response);
             dayTypeRepository.setHolidayData(dto.toEntity());
         } catch (Exception e) {
-            throw new RuntimeException("Failed to get holiday data" + e.getMessage());
+            throw new RuntimeException("Failed to get holiday data");
         }
     }
 

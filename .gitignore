@@ -37,6 +37,7 @@ target/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+bin/
 
 # STS (Spring Tool Suite)
 .apt_generated
