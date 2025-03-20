@@ -2,11 +2,10 @@ package com.yongjibus.daytype.repository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.yongjibus.daytype.domain.DateInfo;
-import com.yongjibus.exception.DateInfoNotFoundException;
-
+import com.yongjibus.global.error.code.ErrorCode;
+import com.yongjibus.global.error.exception.DateInfoNotFoundException;
 
 import jakarta.annotation.PostConstruct;
 
@@ -39,12 +38,12 @@ public class InMemoryDayTypeRepository implements DayTypeRepository {
                 return dateInfo;
             }
         }
-        throw new DateInfoNotFoundException(date.toString() + " 날짜의 데이터를 찾을 수 없습니다.");
+        throw new DateInfoNotFoundException(ErrorCode.DATE_INFO_NOT_FOUND, date.toString());
     }
 
     /**
      * 현재 월의 날짜 데이터를 메모리에 저장
-     */
+     */ 
     @Override
     public void setDateData() {
         List<DateInfo> currentMonthDates = IntStream.rangeClosed(1, getLastDayOfMonth())

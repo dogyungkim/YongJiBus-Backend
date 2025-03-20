@@ -1,4 +1,4 @@
-FROM openjdk:17-jdk-slim AS build
+FROM eclipse-temurin:17-jdk-alpine AS build
 
 ENV APP_HOME=/app
 WORKDIR $APP_HOME
@@ -8,14 +8,14 @@ COPY gradle $APP_HOME/gradle
 COPY build.gradle $APP_HOME/
 
 RUN chmod +x ./gradlew
-RUN ./gradlew dependencies --no-daemon
+RUN ./gradlew dependencies
 
 COPY src $APP_HOME/src
 COPY .env $APP_HOME/.env
 
-RUN ./gradlew build --no-daemon
+RUN ./gradlew build
 
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 

@@ -10,5 +10,4 @@ public class YongjibusApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(YongjibusApplication.class, args);
 	}
-
 }

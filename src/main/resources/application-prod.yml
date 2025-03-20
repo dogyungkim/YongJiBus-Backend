@@ -12,6 +12,24 @@ spring:
       hibernate:
         format_sql: false
         dialect: org.hibernate.dialect.MySQL8Dialect
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connection-timeout: 5000
+          timeout: 5000
+          write-timeout: 5000
+    auth-code-expiration-minutes: 10
+    report:
+      to: ${REPORT_TO}
 
 secrets:
   open_api_key: ${OPEN_API_KEY}
@@ -32,3 +50,8 @@ logging:
     name: /var/log/spring.log  # 로그 파일 이름
   pattern:
     file: "%d{yyyy-MM-dd HH:mm:ss} %level %logger --- %msg%n"
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-validity: 36000000    # 10시간 (10 * 60 * 60 * 1000 밀리초)
+  refresh-token-validity: 604800000  # 7일 (7 * 24 * 60 * 60 * 1000 밀리초)

@@ -7,11 +7,12 @@ import java.time.LocalDate;
 
 import org.springframework.stereotype.Service;
 
+import com.yongjibus.arrivaltime.controller.dto.GetArrivalTimeRequestDTO;
+import com.yongjibus.arrivaltime.controller.dto.SaveArrivalTimeRequestDTO;
 import com.yongjibus.arrivaltime.domain.ArrivalTime;
-import com.yongjibus.arrivaltime.domain.SaveArrivalTimeRequestDTO;
-import com.yongjibus.arrivaltime.domain.GetArrivalTimeRequestDTO;
 import com.yongjibus.arrivaltime.repository.ArrivalTimeRepository;
-import com.yongjibus.exception.DateInfoNotFoundException;
+import com.yongjibus.global.error.code.ErrorCode;
+import com.yongjibus.global.error.exception.DateInfoNotFoundException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,7 +49,7 @@ public class ArrivalTimeService {
         List<ArrivalTime> arrivalTimes = arrivalTimeRepository.findByTimeIdAndDate(dto.busId(), dto.date());
         log.info("arrivalTimes: {}", arrivalTimes);
         if (arrivalTimes.isEmpty()) {
-            throw new DateInfoNotFoundException("실제 버스 도착 시간 정보가 없습니다.");
+            throw new DateInfoNotFoundException(ErrorCode.DATE_INFO_NOT_FOUND, dto.date().toString());
         }
         return arrivalTimes;
     }
@@ -63,7 +64,7 @@ public class ArrivalTimeService {
     public List<ArrivalTime> getFiveArrivalTimeByBusIdAndDate(GetArrivalTimeRequestDTO dto) {
         List<ArrivalTime> arrivalTimes = arrivalTimeRepository.findTop5ByTimeIdAndDateOrderByTimeDesc(dto.busId(), dto.date());
         if (arrivalTimes.isEmpty()) {
-            throw new DateInfoNotFoundException("실제 버스 도착 시간 정보가 없습니다.");
+            throw new DateInfoNotFoundException(ErrorCode.DATE_INFO_NOT_FOUND, dto.date().toString());
         }
         return arrivalTimes.stream().limit(5).toList();
     }
@@ -78,7 +79,7 @@ public class ArrivalTimeService {
     public Map<Integer, List<ArrivalTime>> getArrivalTimesGroupedByBusId(LocalDate date) {
         List<ArrivalTime> arrivalTimes = arrivalTimeRepository.findByDate(date);
         if (arrivalTimes.isEmpty()) {
-            throw new DateInfoNotFoundException("해당 날짜에 대한 버스 도착 시간 정보가 없습니다.");
+            throw new DateInfoNotFoundException(ErrorCode.DATE_INFO_NOT_FOUND, date.toString());
         }
         return arrivalTimes.stream()
                 .collect(Collectors.groupingBy(ArrivalTime::getTimeId));

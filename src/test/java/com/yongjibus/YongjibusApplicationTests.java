@@ -9,5 +9,4 @@ class YongjibusApplicationTests {
 	@Test
 	void contextLoads() {
 	}
-
 }
