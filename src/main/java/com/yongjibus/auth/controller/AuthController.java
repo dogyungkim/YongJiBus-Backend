@@ -68,13 +68,15 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthTokenDTO>> login(@Valid @RequestBody LoginRequestDTO dto) {
-        AuthTokenDTO tokenResponse = authService.login(dto.email(), dto.password());
+        List<String> tokens = authService.login(dto.email(), dto.password());
+        AuthTokenDTO tokenResponse = new AuthTokenDTO(tokens.get(0), tokens.get(1));
         return ApiResponse.success(tokenResponse);
     }
     
     @PostMapping("/token/refresh")
     public ResponseEntity<ApiResponse<AuthTokenDTO>> refreshAccessToken(@AuthenticationPrincipal MemberDetail memberDetail, Authentication authentication) {
-        AuthTokenDTO tokenResponse = authService.refreshAccessToken(authentication.getCredentials().toString(), memberDetail.getMember());
+        List<String> tokens = authService.refreshAccessToken(authentication.getCredentials().toString(), memberDetail.getMember());
+        AuthTokenDTO tokenResponse = new AuthTokenDTO(tokens.get(0), tokens.get(1));
         return ApiResponse.success(tokenResponse);
     }
     

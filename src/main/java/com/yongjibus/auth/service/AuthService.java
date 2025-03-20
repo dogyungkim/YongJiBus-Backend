@@ -6,7 +6,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.yongjibus.auth.controller.dto.AuthTokenDTO;
 import com.yongjibus.global.error.code.ErrorCode;
 import com.yongjibus.global.error.exception.AuthException;
 import com.yongjibus.global.infra.email.EmailService;
@@ -35,7 +34,7 @@ public class AuthService {
         String authCode = AuthCodeGenerator.generateCode();
         log.info("authCode : {}", authCode);
         emailTokenService.setAuthCode(email, authCode);
-        //emailService.sendAuthEmail(email, authCode);
+        emailService.sendAuthEmail(email, authCode);
         return authCode;
     }
 
@@ -67,11 +66,11 @@ public class AuthService {
      * 
      * @param email 로그인할 사용자의 이메일
      * @param password 로그인할 사용자의 비밀번호
-     * @return 발급된 AccessToken과 RefreshToken
+     * @return 발급된 AccessToken과 RefreshToken의 리스트 [accessToken, refreshToken]
      * @throws AuthException 이메일이 존재하지 않거나 비밀번호가 일치하지 않을 경우
      */
     @Transactional
-    public AuthTokenDTO login(String email, String password) {
+    public List<String> login(String email, String password) {
 
         Member member = memberService.getMemberByEmail(email);
 
@@ -83,7 +82,7 @@ public class AuthService {
         String accessToken = jwtService.createAccessToken(email);
         String refreshToken = jwtService.createAndSaveRefreshToken(email);
         
-        return new AuthTokenDTO(accessToken, refreshToken);
+        return List.of(accessToken, refreshToken);
     }
 
     /**
@@ -116,10 +115,10 @@ public class AuthService {
      * RefreshToken을 사용하여 AccessToken을 재발행합니다.
      * 
      * @param refreshToken 사용자의 RefreshToken
-     * @return 새로 발급된 AccessToken
+     * @return 새로 발급된 AccessToken과 RefreshToken의 리스트 [accessToken, refreshToken]
      * @throws AuthException RefreshToken이 유효하지 않을 경우
      */
-    public AuthTokenDTO refreshAccessToken(String refreshToken, Member member) {
+    public List<String> refreshAccessToken(String refreshToken, Member member) {
         if (!jwtService.validateRefreshToken(refreshToken)) {
             throw new AuthException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
@@ -128,7 +127,7 @@ public class AuthService {
         String newAccessToken = jwtService.createAccessToken(email);
         String newRefreshToken = jwtService.createAndSaveRefreshToken(email);
         
-        return new AuthTokenDTO(newAccessToken, newRefreshToken);
+        return List.of(newAccessToken, newRefreshToken);
     }
 
     /**
