@@ -32,7 +32,7 @@ public class AuthService {
      */
     public String sendAuthEmail(String email) {
         String authCode = AuthCodeGenerator.generateCode();
-        log.info("authCode : {}", authCode);
+
         emailTokenService.setAuthCode(email, authCode);
         emailService.sendAuthEmail(email, authCode);
         return authCode;

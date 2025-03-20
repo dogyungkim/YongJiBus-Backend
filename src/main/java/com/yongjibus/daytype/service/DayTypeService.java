@@ -81,7 +81,6 @@ public class DayTypeService {
      */
     private HolidayInfoExternalResponseDTO parseHolidayXmlResponse(String response) throws JsonMappingException, JsonProcessingException{
         XmlMapper xmlMapper = new XmlMapper();
-        log.info("response: {}", response);
         return xmlMapper.readValue(response, HolidayInfoExternalResponseDTO.class);
     }
 }

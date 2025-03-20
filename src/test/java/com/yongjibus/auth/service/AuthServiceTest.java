@@ -5,6 +5,9 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -110,8 +113,10 @@ class AuthServiceTest {
         // given
         when(passwordEncoder.matches(TEST_PASSWORD, testMember.getPassword())).thenReturn(true);
         when(memberService.getMemberByEmail(TEST_EMAIL)).thenReturn(testMember);
+        when(jwtService.createAccessToken(anyString())).thenReturn("accessToken");
+        when(jwtService.createAndSaveRefreshToken(anyString())).thenReturn("refreshToken");
         // when
-        authService.login(TEST_EMAIL, TEST_PASSWORD);
+        List<String> tokens = authService.login(TEST_EMAIL, TEST_PASSWORD);
 
         // then
         verify(memberService).getMemberByEmail(TEST_EMAIL);
@@ -156,14 +161,14 @@ class AuthServiceTest {
         when(jwtService.createAndSaveRefreshToken(TEST_EMAIL)).thenReturn("newRefreshToken");
 
         // when
-       AuthTokenDTO authTokenDTO = authService.refreshAccessToken(refreshToken, testMember);
+        List<String> tokens = authService.refreshAccessToken(refreshToken, testMember);
 
         // then
         verify(jwtService).validateRefreshToken(refreshToken);
         verify(jwtService).createAccessToken(TEST_EMAIL);
         verify(jwtService).createAndSaveRefreshToken(TEST_EMAIL);
-        assertThat(authTokenDTO.accessToken()).isEqualTo("newAccessToken");
-        assertThat(authTokenDTO.refreshToken()).isEqualTo("newRefreshToken");
+        assertThat(tokens.get(0)).isEqualTo("newAccessToken");
+        assertThat(tokens.get(1)).isEqualTo("newRefreshToken");
     }
 
     @Test
