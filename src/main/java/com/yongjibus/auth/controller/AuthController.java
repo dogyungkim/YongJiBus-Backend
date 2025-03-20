@@ -53,7 +53,7 @@ public class AuthController {
      */
     @GetMapping("/username/{username}/exists")
     public ResponseEntity<ApiResponse<UsernameCheckResponseDTO>> checkUsernameExists(
-            @PathVariable String username) {
+            @PathVariable("username") String username) {
         boolean exists = authService.checkUsernameExists(username);
         return ApiResponse.success(new UsernameCheckResponseDTO(exists));
     }

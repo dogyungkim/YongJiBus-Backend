@@ -95,7 +95,6 @@ public class ChatService {
             .isPresent();
         
         if (alreadyJoined) {
-            log.info("이미 해당 채팅방에 참여 중입니다.");
             return chatRoom;
         }
         
@@ -124,8 +123,7 @@ public class ChatService {
             .anyMatch(m -> m.getId().equals(member.getId()));
 
         if (!isMemberInChatRoom) {
-            log.info("해당 채팅방에 참여 중이 아닙니다.");
-            return;
+            throw new ChatException(ErrorCode.CHAT_ROOM_NOT_FOUND);
         }
         
         // 채팅방에서 멤버 제거

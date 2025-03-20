@@ -28,7 +28,6 @@ public class StompPreHandler implements ChannelInterceptor {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
         if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
-            log.info("STOMP Connection established");
             String token = accessor.getNativeHeader("authorization").get(0);
 
             if (token != null && token.startsWith("Bearer ")) { 
@@ -42,14 +41,10 @@ public class StompPreHandler implements ChannelInterceptor {
             }
 
         } else if (accessor != null && StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
-            log.info("STOMP Subscription: {}", accessor.getDestination());
         } else if (accessor != null && StompCommand.SEND.equals(accessor.getCommand())) {
-            log.info("STOMP Message sent to: {}", accessor.getDestination());
         } else if (accessor != null && StompCommand.DISCONNECT.equals(accessor.getCommand())) {
-            log.info("STOMP Connection closed");
             websocketSessionManager.removeSessionBySessionId(accessor.getSessionId());
         } else if (accessor != null && StompCommand.UNSUBSCRIBE.equals(accessor.getCommand())) {
-            log.info("STOMP Unsubscription: {}", accessor.getDestination());
         }
         return message;
     }

@@ -33,8 +33,7 @@ public class AuthService {
      */
     public String sendAuthEmail(String email) {
         String authCode = AuthCodeGenerator.generateCode();
-        log.info("인증 코드 : {}", authCode);
-
+        log.info("authCode : {}", authCode);
         emailTokenService.setAuthCode(email, authCode);
         //emailService.sendAuthEmail(email, authCode);
         return authCode;
@@ -49,7 +48,6 @@ public class AuthService {
      */
     public void verifyAuthCode(String email, String authCode) {
         String storedAuthCode = emailTokenService.getAuthCode(email);
-        log.info("인증 이메일 : {}, 인증 코드 : {}", email, storedAuthCode);
 
         if (storedAuthCode == null) {
             throw new AuthException(ErrorCode.INVALID_AUTH_CODE);
