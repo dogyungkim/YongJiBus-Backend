@@ -16,6 +16,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.yongjibus.global.infra.jwt.JwtCacheService;
+import com.yongjibus.global.infra.jwt.JwtService;
+
 import io.jsonwebtoken.security.Keys;
 
 @ExtendWith(MockitoExtension.class)

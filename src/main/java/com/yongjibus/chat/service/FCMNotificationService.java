@@ -1,8 +1,9 @@
 package com.yongjibus.chat.service;
 
 import com.google.firebase.messaging.*;
-import com.yongjibus.auth.domain.Member;
 import com.yongjibus.chat.domain.*;
+import com.yongjibus.member.domain.Member;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

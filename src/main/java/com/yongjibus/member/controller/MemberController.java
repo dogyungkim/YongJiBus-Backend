@@ -6,12 +6,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.yongjibus.auth.domain.Member;
 import com.yongjibus.auth.domain.MemberDetail;
 import com.yongjibus.member.controller.dto.MemberResponseDTO;
-import com.yongjibus.global.ApiResponse;
-import com.yongjibus.global.exception.AuthException;
-import com.yongjibus.global.exception.ErrorCode;
+import com.yongjibus.member.domain.Member;
+import com.yongjibus.global.common.response.ApiResponse;
+import com.yongjibus.global.error.code.ErrorCode;
+import com.yongjibus.global.error.exception.AuthException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Component;
 
-import com.yongjibus.global.jwt.JwtCacheService;
+import com.yongjibus.global.infra.jwt.JwtCacheService;
 
 @Component
 public class InMemoryJwtCacheService implements JwtCacheService {

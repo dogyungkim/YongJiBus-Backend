@@ -4,11 +4,11 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import com.yongjibus.auth.service.EmailService;
+import com.yongjibus.global.infra.email.EmailService;
+import com.yongjibus.member.domain.Member;
 import com.yongjibus.member.domain.MemberReport;
 import com.yongjibus.member.repository.MemberReportRepository;
-import com.yongjibus.auth.repository.MemberRepository;
-import com.yongjibus.auth.domain.Member;
+import com.yongjibus.member.repository.MemberRepository;
 
 import lombok.RequiredArgsConstructor;
 

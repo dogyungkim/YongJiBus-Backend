@@ -5,19 +5,23 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.yongjibus.auth.domain.dto.EmailAuthCodeRequestDTO;
-import com.yongjibus.auth.domain.dto.EmailVerifyRequestDTO;
-import com.yongjibus.auth.domain.dto.LoginRequestDTO;
-import com.yongjibus.auth.domain.dto.SignupRequestDTO;
+import com.yongjibus.auth.controller.dto.EmailAuthCodeRequestDTO;
+import com.yongjibus.auth.controller.dto.EmailVerifyRequestDTO;
+import com.yongjibus.auth.controller.dto.LoginRequestDTO;
+import com.yongjibus.auth.controller.dto.SignupRequestDTO;
+import com.yongjibus.auth.controller.dto.UsernameCheckResponseDTO;
 import com.yongjibus.auth.domain.MemberDetail;
-import com.yongjibus.auth.domain.dto.AuthTokenDTO;
+import com.yongjibus.auth.controller.dto.AuthTokenDTO;
 import com.yongjibus.auth.service.AuthService;
-import com.yongjibus.global.ApiResponse;
+import com.yongjibus.global.common.response.ApiResponse;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +46,16 @@ public class AuthController {
         
         authService.verifyAuthCode(dto.email(), dto.authCode());
         return ApiResponse.success("인증 코드가 확인되었습니다.");
+    }
+
+    /**
+     * 사용자 이름(username) 중복 여부를 확인합니다.
+     */
+    @GetMapping("/username/{username}/exists")
+    public ResponseEntity<ApiResponse<UsernameCheckResponseDTO>> checkUsernameExists(
+            @PathVariable String username) {
+        boolean exists = authService.checkUsernameExists(username);
+        return ApiResponse.success(new UsernameCheckResponseDTO(exists));
     }
 
     @PostMapping("/signup")
@@ -74,13 +88,24 @@ public class AuthController {
      * 사용자 로그아웃을 처리합니다.
      * RefreshToken을 무효화하여 로그아웃 처리합니다.
      * 
-     * @param dto 로그아웃 요청 DTO (RefreshToken 포함)
      * @return 로그아웃 성공 메시지
      */
-    @PostMapping("/logout")
+    @DeleteMapping("/logout")
     public ResponseEntity<ApiResponse<String>> logout(@AuthenticationPrincipal MemberDetail memberDetail) {
         authService.logout(memberDetail.getMember());
         return ApiResponse.success("로그아웃이 완료되었습니다.");
+    }
+    
+    /**
+     * 회원 탈퇴를 처리합니다.
+     * 회원 상태를 삭제됨으로 변경하고 저장합니다.
+     * 
+     * @return 회원 탈퇴 성공 메시지
+     */
+    @DeleteMapping("/signout")
+    public ResponseEntity<ApiResponse<String>> signoutMember(@AuthenticationPrincipal MemberDetail memberDetail) {
+        authService.signoutMember(memberDetail.getMember());
+        return ApiResponse.success("회원 탈퇴가 완료되었습니다.");
     }
     
 }

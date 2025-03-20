@@ -5,9 +5,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.yongjibus.auth.domain.Member;
 import com.yongjibus.auth.domain.MemberDetail;
-import com.yongjibus.auth.repository.MemberRepository;
+import com.yongjibus.member.domain.Member;
+import com.yongjibus.member.repository.MemberRepository;
 
 import lombok.RequiredArgsConstructor;
 

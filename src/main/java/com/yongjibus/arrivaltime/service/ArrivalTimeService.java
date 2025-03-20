@@ -7,12 +7,12 @@ import java.time.LocalDate;
 
 import org.springframework.stereotype.Service;
 
+import com.yongjibus.arrivaltime.controller.dto.GetArrivalTimeRequestDTO;
+import com.yongjibus.arrivaltime.controller.dto.SaveArrivalTimeRequestDTO;
 import com.yongjibus.arrivaltime.domain.ArrivalTime;
-import com.yongjibus.arrivaltime.domain.SaveArrivalTimeRequestDTO;
-import com.yongjibus.arrivaltime.domain.GetArrivalTimeRequestDTO;
 import com.yongjibus.arrivaltime.repository.ArrivalTimeRepository;
-import com.yongjibus.global.exception.DateInfoNotFoundException;
-import com.yongjibus.global.exception.ErrorCode;
+import com.yongjibus.global.error.code.ErrorCode;
+import com.yongjibus.global.error.exception.DateInfoNotFoundException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

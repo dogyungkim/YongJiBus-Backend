@@ -1,7 +1,8 @@
 package com.yongjibus.chat.repository;
 
-import com.yongjibus.auth.domain.Member;
 import com.yongjibus.chat.domain.FCMToken;
+import com.yongjibus.member.domain.Member;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

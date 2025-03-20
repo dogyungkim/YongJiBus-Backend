@@ -17,12 +17,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.yongjibus.arrivaltime.controller.dto.GetArrivalTimeRequestDTO;
+import com.yongjibus.arrivaltime.controller.dto.SaveArrivalTimeRequestDTO;
 import com.yongjibus.arrivaltime.domain.ArrivalTime;
-import com.yongjibus.arrivaltime.domain.SaveArrivalTimeRequestDTO;
-import com.yongjibus.arrivaltime.domain.GetArrivalTimeRequestDTO;
 import com.yongjibus.arrivaltime.repository.ArrivalTimeRepository;
 import com.yongjibus.arrivaltime.service.ArrivalTimeService;
-import com.yongjibus.global.exception.DateInfoNotFoundException;
+import com.yongjibus.global.error.exception.DateInfoNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 public class ArrivalTimeServiceTest {

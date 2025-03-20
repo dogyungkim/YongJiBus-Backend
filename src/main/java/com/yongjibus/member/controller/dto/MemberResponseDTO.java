@@ -1,6 +1,6 @@
 package com.yongjibus.member.controller.dto;
 
-import com.yongjibus.auth.domain.Member;
+import com.yongjibus.member.domain.Member;
 
 import lombok.Builder;
 

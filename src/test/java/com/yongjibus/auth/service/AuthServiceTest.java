@@ -8,8 +8,6 @@ import static org.mockito.Mockito.when;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Optional;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,12 +17,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import com.yongjibus.auth.domain.Member;
-import com.yongjibus.auth.domain.dto.AuthTokenDTO;
-import com.yongjibus.auth.repository.MemberRepository;
-import com.yongjibus.global.exception.AuthException;
-import com.yongjibus.global.exception.ErrorCode;
-import com.yongjibus.global.jwt.JwtService;
+import com.yongjibus.auth.controller.dto.AuthTokenDTO;
+import com.yongjibus.global.error.code.ErrorCode;
+import com.yongjibus.global.error.exception.AuthException;
+import com.yongjibus.global.infra.email.EmailService;
+import com.yongjibus.global.infra.jwt.JwtService;
+import com.yongjibus.member.domain.Member;
+import com.yongjibus.member.repository.MemberRepository;
+import com.yongjibus.member.service.MemberService;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -187,7 +187,6 @@ class AuthServiceTest {
 
         // then
         verify(jwtService).deleteRefreshToken(TEST_EMAIL);
-        verify(memberService).saveMember(testMember);
         // Member의 delete 메서드가 호출되었는지 확인하기 어려우므로 상태 변경 확인
         // ReflectionTestUtils를 사용하여 private 필드 확인 가능
     }

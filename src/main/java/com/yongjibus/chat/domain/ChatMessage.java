@@ -21,7 +21,8 @@ public class ChatMessage {
     public enum MessageType {
         MESSAGE,       // 일반 채팅 메시지
         ENTER,      // 채팅방 입장 메시지
-        LEAVE       // 채팅방 퇴장 메시지
+        LEAVE,       // 채팅방 퇴장 메시지
+        SYSTEM      // 욕설 경고 메시지
     }
     
     @Id

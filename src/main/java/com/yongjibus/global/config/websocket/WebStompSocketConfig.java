@@ -1,18 +1,15 @@
 package com.yongjibus.global.config.websocket;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
-import org.springframework.scheduling.TaskScheduler;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
-import com.yongjibus.global.exception.WebsocketStompErrorHandler;
-import com.yongjibus.global.websocket.JwtHandshakeInterceptor;
-import com.yongjibus.global.websocket.StompPreHandler;
+import com.yongjibus.global.error.handler.WebsocketStompErrorHandler;
+import com.yongjibus.global.infra.websocket.JwtHandshakeInterceptor;
+import com.yongjibus.global.infra.websocket.StompPreHandler;
 
 import lombok.RequiredArgsConstructor;
 

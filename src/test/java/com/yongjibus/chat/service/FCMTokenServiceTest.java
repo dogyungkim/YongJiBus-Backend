@@ -1,10 +1,11 @@
 package com.yongjibus.chat.service;
 
-import com.yongjibus.auth.domain.Member;
 import com.yongjibus.chat.domain.FCMToken;
 import com.yongjibus.chat.repository.FCMTokenRepository;
-import com.yongjibus.global.exception.ChatException;
-import com.yongjibus.global.exception.ErrorCode;
+import com.yongjibus.global.error.code.ErrorCode;
+import com.yongjibus.global.error.exception.ChatException;
+import com.yongjibus.member.domain.Member;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -7,10 +7,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.yongjibus.auth.domain.Member;
 import com.yongjibus.auth.domain.MemberDetail;
-import com.yongjibus.global.ApiResponse;
+import com.yongjibus.global.common.response.ApiResponse;
 import com.yongjibus.member.controller.dto.ReportUserRequestDTO;
+import com.yongjibus.member.domain.Member;
 import com.yongjibus.member.domain.MemberReport;
 import com.yongjibus.member.service.ReportService;
 

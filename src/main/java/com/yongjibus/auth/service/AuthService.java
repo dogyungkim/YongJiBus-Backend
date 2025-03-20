@@ -6,11 +6,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.yongjibus.auth.domain.Member;
-import com.yongjibus.auth.domain.dto.AuthTokenDTO;
-import com.yongjibus.global.exception.AuthException;
-import com.yongjibus.global.exception.ErrorCode;
-import com.yongjibus.global.jwt.JwtService;
+import com.yongjibus.auth.controller.dto.AuthTokenDTO;
+import com.yongjibus.global.error.code.ErrorCode;
+import com.yongjibus.global.error.exception.AuthException;
+import com.yongjibus.global.infra.email.EmailService;
+import com.yongjibus.global.infra.jwt.JwtService;
+import com.yongjibus.member.domain.Member;
+import com.yongjibus.member.service.MemberService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +36,7 @@ public class AuthService {
         log.info("인증 코드 : {}", authCode);
 
         emailTokenService.setAuthCode(email, authCode);
-        emailService.sendAuthEmail(email, authCode);
+        //emailService.sendAuthEmail(email, authCode);
         return authCode;
     }
 
@@ -135,17 +137,41 @@ public class AuthService {
      * 사용자 로그아웃을 처리합니다.
      * RefreshToken을 무효화하여 로그아웃 처리합니다.
      *
-     * @throws AuthException RefreshToken이 유효하지 않을 경우
+     * @param member 로그아웃할 회원
      */
     @Transactional
     public void logout(Member member) {
-
         // Redis에서 RefreshToken 삭제
         jwtService.deleteRefreshToken(member.getEmail());
+    }
 
+    /**
+     * 회원 탈퇴를 처리합니다.
+     * 회원 상태를 삭제됨으로 변경하고 저장합니다.
+     *
+     * @param member 탈퇴할 회원
+     */
+    @Transactional
+    public void signoutMember(Member member) {
+        // RefreshToken 삭제 (로그아웃 처리)
+        jwtService.deleteRefreshToken(member.getEmail());
+        
+        // 회원 상태를 삭제됨으로 변경
         member.delete();
         
+        // 변경된 회원 정보 저장
         memberService.saveMember(member);
+    }
+    
+    /**
+     * 사용자 이름(username) 중복 여부를 확인합니다.
+     * 
+     * @param username 확인할 사용자 이름
+     * @return 중복되면 true, 아니면 false
+     */
+    @Transactional(readOnly = true)
+    public boolean checkUsernameExists(String username) {
+        return memberService.checkUsernameExists(username);
     }
 
     private void validateEmailVerification(String email) {

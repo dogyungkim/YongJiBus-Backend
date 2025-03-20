@@ -1,6 +1,5 @@
 package com.yongjibus.chat.domain;
 
-import com.yongjibus.auth.domain.Member;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -9,6 +8,8 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 import org.springframework.data.annotation.LastModifiedDate;
+
+import com.yongjibus.member.domain.Member;
 
 @Entity
 @Getter
