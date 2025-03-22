@@ -38,7 +38,8 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
         "/auth",
         "/actuator",
         "/vacation",
-        "/day"
+        "/day",
+        "/arrivaltime"
     );
 
     @Override

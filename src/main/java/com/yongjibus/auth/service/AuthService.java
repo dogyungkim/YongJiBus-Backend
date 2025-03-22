@@ -74,6 +74,10 @@ public class AuthService {
 
         Member member = memberService.getMemberByEmail(email);
 
+        if(member.getIsDeleted()) {
+            throw new AuthException(ErrorCode.MEMBER_DELETED);
+        }
+
         if (!passwordEncoder.matches(password, member.getPassword())) {
             throw new AuthException(ErrorCode.INVALID_CREDENTIALS);
         }

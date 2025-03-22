@@ -1,4 +1,7 @@
 spring:
+  config:
+    activate:
+      on-profile: prod
   datasource:
     url: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}
     username: ${MYSQL_USERNAME}
@@ -6,7 +9,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
@@ -40,12 +43,12 @@ management:
       enabled: true  
     web:  
       exposure:  
-        include: prometheus
+        include: prometheus,loggers
 
 logging:
   level:
-    root: INFO
-    org.springframework: INFO # 로그 레벨 설정
+    root: WARN
+    org.springframework: WARN # 로그 레벨 설정
   file:
     name: /var/log/spring.log  # 로그 파일 이름
   pattern:
