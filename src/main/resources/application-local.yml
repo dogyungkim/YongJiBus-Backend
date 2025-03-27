@@ -47,7 +47,7 @@ management:
       enabled: true  
     web:  
       exposure:  
-        include: prometheus
+        include: prometheus, loggers
 
 jwt:
   secret: ${JWT_SECRET}

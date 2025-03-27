@@ -47,6 +47,7 @@ public class SecurityConfig {
                                 "/swagger-ui.html", 
                                 "/swagger-resources/**",
                                 "/webjars/**").permitAll()
+                .requestMatchers("/arrivaltime/**").permitAll()
                 .anyRequest().authenticated()
             )
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
