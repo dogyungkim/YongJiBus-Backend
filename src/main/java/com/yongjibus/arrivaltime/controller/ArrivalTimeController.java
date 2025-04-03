@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.yongjibus.arrivaltime.service.ArrivalTimeService;
-import com.yongjibus.global.common.response.ApiResponse;
+import com.yongjibus.global.common.response.YongJiResponse;
 
 import java.util.List;
 import java.time.LocalDate;
@@ -32,13 +32,13 @@ public class ArrivalTimeController {
     private final ArrivalTimeService arrivalTimeService;
 
     @PostMapping("/save")
-    public ResponseEntity<ApiResponse<String>> saveArrivalTime(@RequestBody SaveArrivalTimeRequestDTO request) {
+    public ResponseEntity<YongJiResponse<String>> saveArrivalTime(@RequestBody SaveArrivalTimeRequestDTO request) {
         arrivalTimeService.saveArrivalTime(request);
-        return ApiResponse.success("Success");
+        return YongJiResponse.success("Success");
     }
 
     @GetMapping("/{date}")
-    public ResponseEntity<ApiResponse<List<ArrivalTimeListResponseDTO>>> getAllArrivalTime(
+    public ResponseEntity<YongJiResponse<List<ArrivalTimeListResponseDTO>>> getAllArrivalTime(
             @PathVariable("date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date){
                 
         Map<Integer, List<ArrivalTime>> arrivalTimesGroupedByBusId = arrivalTimeService.getArrivalTimesGroupedByBusId(date);
@@ -50,11 +50,11 @@ public class ArrivalTimeController {
                 ))
                 .toList();
         
-        return ApiResponse.success(response);
+        return YongJiResponse.success(response);
     }
 
     @GetMapping("/{date}/{busId}")
-    public ResponseEntity<ApiResponse<List<ArrivalTimeResponseDTO>>> getArrivalTime(
+    public ResponseEntity<YongJiResponse<List<ArrivalTimeResponseDTO>>> getArrivalTime(
         @PathVariable("date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
         @PathVariable("busId") int busId) {
         GetArrivalTimeRequestDTO request = new GetArrivalTimeRequestDTO(busId, date);
@@ -62,6 +62,6 @@ public class ArrivalTimeController {
             .stream()
             .map(ArrivalTimeResponseDTO::from)
             .toList();
-        return ApiResponse.success(response);
+        return YongJiResponse.success(response);
     }
 }

@@ -115,7 +115,7 @@ class AuthServiceTest {
         when(jwtService.createAccessToken(anyString())).thenReturn("accessToken");
         when(jwtService.createAndSaveRefreshToken(anyString())).thenReturn("refreshToken");
         // when
-        authService.login(TEST_EMAIL, TEST_PASSWORD);
+        List<String> tokens = authService.login(TEST_EMAIL, TEST_PASSWORD);
 
         // then
         verify(memberService).getMemberByEmail(TEST_EMAIL);
