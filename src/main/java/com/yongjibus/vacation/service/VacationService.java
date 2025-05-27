@@ -6,8 +6,6 @@ import com.yongjibus.vacation.repository.VacationPeriodRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -40,17 +38,8 @@ public class VacationService {
      * @param date 확인할 날짜
      * @return boolean 방학 기간 여부
      */
-    @Cacheable(value = "vacationStatus")
     public boolean isVacation(LocalDate date) {
         VacationPeriod vacationPeriod = vacationPeriodRepository.findByStartDateLessThanEqualAndEndDateGreaterThanEqual(date,date);
         return vacationPeriod != null && date.isAfter(vacationPeriod.getStartDate()) && date.isBefore(vacationPeriod.getEndDate());
-    }
-
-    /**
-     * 방학 기간 캐시를 지우는 메서드
-     */
-    @CacheEvict(value = "vacationStatus", allEntries = true)
-    public void clearCache() {
-        log.info("Cache cleared");
     }
 } 

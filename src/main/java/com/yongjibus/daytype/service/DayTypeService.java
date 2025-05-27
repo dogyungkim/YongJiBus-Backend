@@ -14,6 +14,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -37,6 +38,7 @@ public class DayTypeService {
      * @param date 확인할 날짜
      * @return DateInfo 날짜 정보
      */
+    @Cacheable(value = "dayInfo")
     public DateInfo findDayInfo(LocalDate date) {
         if(vacationService.isVacation(date)) {
             return DateInfo.builder()
