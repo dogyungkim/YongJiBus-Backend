@@ -24,7 +24,7 @@ public class CacheConfig {
 
     @Bean
     public CacheManager cacheManager() {
-        CaffeineCacheManager cacheManager = new CaffeineCacheManager("vacationStatus");
+        CaffeineCacheManager cacheManager = new CaffeineCacheManager("dayInfo");
         cacheManager.setCaffeine(Caffeine.newBuilder()
         .expireAfterWrite(1, TimeUnit.DAYS)
         .maximumSize(10));
