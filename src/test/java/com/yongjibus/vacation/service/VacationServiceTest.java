@@ -35,7 +35,6 @@ class VacationServiceTest {
                 .startDate(LocalDate.of(2024, 1, 1))
                 .endDate(LocalDate.of(2024, 2, 29))
                 .build();
-        vacationService.clearCache();
     }
 
     @Test
@@ -94,21 +93,5 @@ class VacationServiceTest {
 
         // then
         assertThat(result).isFalse();
-    }
-
-    @Test
-    @DisplayName("getCurrentVacation 캐시 동작 테스트")
-    void getCurrentVacation_WithCaching() {
-        // given
-        when(vacationPeriodRepository.findByStartDateLessThanEqualAndEndDateGreaterThanEqual(any(LocalDate.class), any(LocalDate.class))).thenReturn(sampleVacationPeriod);
-        LocalDate testDate = LocalDate.of(2024,1,15);
-
-        // when
-        boolean result = vacationService.isVacation(testDate);
-        boolean result2 = vacationService.isVacation(testDate);
-
-        // then
-        verify(vacationPeriodRepository, times(1)).findByStartDateLessThanEqualAndEndDateGreaterThanEqual(any(LocalDate.class), any(LocalDate.class)); // 캐시로 인해 repository는 한 번만 호출됨
-        assertThat(result).isEqualTo(result2);
     }
 } 
