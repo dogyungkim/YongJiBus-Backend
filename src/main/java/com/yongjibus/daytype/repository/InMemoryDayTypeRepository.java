@@ -14,12 +14,16 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.IntStream;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Repository
 @RequiredArgsConstructor
 public class InMemoryDayTypeRepository implements DayTypeRepository {
 
-    private static final List<DateInfo> store = new CopyOnWriteArrayList<>();
+    private final ConcurrentHashMap<LocalDate, DateInfo> store = new ConcurrentHashMap<>();
 
     @PostConstruct
     private void init(){
@@ -33,12 +37,11 @@ public class InMemoryDayTypeRepository implements DayTypeRepository {
      */
     @Override
     public DateInfo findByDate(LocalDate date) {
-        for (DateInfo dateInfo : store) {
-            if (dateInfo.getDate().equals(date)) {
-                return dateInfo;
-            }
+        DateInfo dateInfo = store.get(date);
+        if (dateInfo == null) {
+            throw new DateInfoNotFoundException(ErrorCode.DATE_INFO_NOT_FOUND, date.toString());
         }
-        throw new DateInfoNotFoundException(ErrorCode.DATE_INFO_NOT_FOUND, date.toString());
+        return dateInfo;
     }
 
     /**
@@ -46,16 +49,16 @@ public class InMemoryDayTypeRepository implements DayTypeRepository {
      */ 
     @Override
     public void setDateData() {
-        List<DateInfo> currentMonthDates = IntStream.rangeClosed(1, getLastDayOfMonth())
+        Map<LocalDate, DateInfo> newData = IntStream.rangeClosed(1, getLastDayOfMonth())
                 .mapToObj(day -> {
                     LocalDate date = LocalDate.now().withDayOfMonth(day);
                     boolean isWeekend = isWeekend(date);
-                    return new DateInfo(date, isWeekend, isWeekend ? "주말" : "평일" );
+                    return new DateInfo(date, isWeekend, isWeekend ? "주말" : "평일");
                 })
-                .toList();
-
+                .collect(Collectors.toMap(DateInfo::getDate, Function.identity()));
+        
         store.clear();
-        store.addAll(currentMonthDates);
+        store.putAll(newData);
     }
 
     /**
@@ -64,17 +67,7 @@ public class InMemoryDayTypeRepository implements DayTypeRepository {
      */
     @Override
     public void setHolidayData(List<DateInfo> dateInfoList) {
-        int storeSize = store.size();
-
-        for (DateInfo dateInfo : dateInfoList) {
-            for (int i = 0; i < storeSize; i++) {
-                DateInfo storedInfo = store.get(i);
-                if (storedInfo.getDate().equals(dateInfo.getDate())) {
-                    store.set(i, dateInfo);
-                    break;
-                }
-            }
-        }
+        dateInfoList.forEach(dateInfo -> store.put(dateInfo.getDate(), dateInfo));
     }
 
     /**

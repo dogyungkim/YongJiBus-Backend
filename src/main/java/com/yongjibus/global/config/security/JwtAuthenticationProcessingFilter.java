@@ -44,7 +44,8 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
         "/api-docs", 
         "/swagger-ui.html", 
         "/swagger-resources/**",
-        "/webjars/**"
+        "/webjars/**",
+        "/health"
     );
 
     @Override
