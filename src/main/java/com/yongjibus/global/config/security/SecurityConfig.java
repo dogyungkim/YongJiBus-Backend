@@ -41,7 +41,7 @@ public class SecurityConfig {
                 .requestMatchers("/ws-stomp").permitAll() // WebSocket 핸드셰이크 엔드포인트 인증 제외
                 .requestMatchers("/auth/login", "/auth/signup", "/auth/email/**","auth/username/**").permitAll() // 인증이 필요없는 특정 경로
                 .requestMatchers("/auth/**").authenticated() // /auth 하위의 나머지 모든 경로는 인증 필요
-                .requestMatchers("/actuator/**", "/vacation/**", "/day").permitAll()
+                .requestMatchers("/actuator/**", "/vacation/**", "/day", "/health").permitAll()
                 .requestMatchers("/api-docs/**", 
                                 "/swagger-ui/**", 
                                 "/swagger-ui.html", 
