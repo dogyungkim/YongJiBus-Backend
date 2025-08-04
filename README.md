@@ -1,11 +1,11 @@
 # YongJiBus-Backend
 
-YongJiBus-Backend는 용지버스(YongJiBus) 서비스의 백엔드 API 서버입니다. 
+YongJiBus-Backend는 용지버스(YongJiBus) 서비스의 백엔드 API 서버입니다.
 사용자에게 실시간 버스 도착 정보, 채팅, 셔틀버스 루트 정보 등 다양한 기능을 제공하며, 안정적이고 확장 가능한 시스템을 목표로 합니다.
 
 ## ✨ 주요 기능
 
-*   **🚌 실시간 버스 정보:** 노선별 셔틀 버스의 실시간 도착 정보를 제공합니다. (추후 업데이트 예정)
+*   **🚌 실시간 버스 정보:** ML 기반 노선별 셔틀 버스의 도착 정보 예측 (개발 중)
 *   **👤 사용자 인증:** JWT 기반의 회원가입, 로그인, 이메일 인증을 지원합니다.
 *   **💬 실시간 채팅:** WebSocket을 통해 사용자 간의 실시간 소통이 가능한 채팅방을 제공합니다.
 *   **📅 운행일 관리:** 공공데이터 API와 연동하여 휴일 정보를 동기화하고, 버스 운행 시간을 구분합니다.
@@ -28,8 +28,14 @@ YongJiBus-Backend는 용지버스(YongJiBus) 서비스의 백엔드 API 서버�
 
 ![프로젝트 아키텍처](Architecture.png)
 
-## 📁 프로젝트 구조
+## 📱 프로젝트 화면
+| 셔틀 시간표 기능 | 채팅 리스트 화면 | 채팅 화면 | 
+|-----------|-----------|-----------|
+| <img width="1179" height="2556" alt="shuttle" src="https://github.com/user-attachments/assets/735546cf-c120-41a5-bb7f-913a71d8d8cb" /> | <img width="1179" height="2556" alt="chat" src="https://github.com/user-attachments/assets/e07ea983-6710-42f2-8612-7dd985988ee1" /> | <img width="1179" height="2556" alt="chatlist" src="https://github.com/user-attachments/assets/ff9d3ec3-2895-47af-bc66-990475b718ff" /> 
+| 날자(평일/공휴일/방학)에 따른 <br>셔틀 시간 표시 및 광역버스 도착 정보 제공| 카풀 전용 채팅방 리스트 | 카풀 채팅 기능 |
 
+## 📁 프로젝트 구조
+ㄴ
 ```
 src
 └── main
