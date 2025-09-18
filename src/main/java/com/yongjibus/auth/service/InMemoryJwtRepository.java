@@ -5,10 +5,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Component;
 
-import com.yongjibus.global.infra.jwt.JwtCacheService;
+import com.yongjibus.global.infra.jwt.JwtRepository;
 
 @Component
-public class InMemoryJwtCacheService implements JwtCacheService {
+public class InMemoryJwtRepository implements JwtRepository {
 
     private final Map<String, String> refreshTokenMap = new ConcurrentHashMap<>();
 

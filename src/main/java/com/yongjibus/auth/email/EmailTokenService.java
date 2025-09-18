@@ -1,4 +1,4 @@
-package com.yongjibus.auth.service;
+package com.yongjibus.auth.email;
 
 public interface EmailTokenService {
     void setAuthCode(String email, String authCode);

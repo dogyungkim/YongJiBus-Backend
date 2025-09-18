@@ -60,6 +60,9 @@ HELP.md
 .env
 src/main/resources/firebase/
 
+credentials.json
+tokens/
+
 YongJiBus-Features.md
 
 TestDataInitializer.java
