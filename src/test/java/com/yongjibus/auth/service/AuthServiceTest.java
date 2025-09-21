@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.yongjibus.auth.email.EmailTokenService;
+import com.yongjibus.auth.email.EmailPendingRepository;
 import com.yongjibus.global.error.code.ErrorCode;
 import com.yongjibus.global.error.exception.AuthException;
 import com.yongjibus.global.infra.email.EmailService;
@@ -37,6 +38,9 @@ class AuthServiceTest {
 
     @Mock
     private MemberRepository authRepository;
+
+    @Mock
+    private EmailPendingRepository emailPendingRepository;
 
     @Mock
     private EmailService emailService;
@@ -69,16 +73,6 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("이메일 인증 코드 발송 테스트")
-    void sendAuthEmailTest() {
-        // when
-        authService.sendAuthEmail(TEST_EMAIL);
-
-        // then
-        verify(emailTokenService).setAuthCode(anyString(), anyString());
-    }
-
-    @Test
     @DisplayName("이메일 인증 코드 검증 성공 테스트")
     void verifyAuthCodeSuccessTest() {
         // given
@@ -91,6 +85,7 @@ class AuthServiceTest {
         // then
         verify(emailTokenService).deleteAuthCode(TEST_EMAIL);
         verify(emailTokenService).setVerified(TEST_EMAIL);
+        verify(emailPendingRepository).deleteEmailPending(TEST_EMAIL);
     }
 
     @Test

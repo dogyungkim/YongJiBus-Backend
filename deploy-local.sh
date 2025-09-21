@@ -68,7 +68,7 @@ cleanup_docker_images() {
 
 # 설정 변수
 DOCKER_REGISTRY="prunsoli"
-PROJECT_NAME="withyou-test"
+PROJECT_NAME="yongji-backend"
 DOCKER_HISTORY_FILE="Docker-History.md"
 CURRENT_BRANCH=$(git branch --show-current)
 CURRENT_DATE=$(date '+%Y-%m-%d')
