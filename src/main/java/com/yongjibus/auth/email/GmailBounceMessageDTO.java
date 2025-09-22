@@ -1,11 +1,18 @@
 package com.yongjibus.auth.email;
 
 public record GmailBounceMessageDTO(
-    GmailBounceDataDTO message
+    Message message,
+    String subscription
 ) {
-    public record GmailBounceDataDTO(
-    String historyId,
-    String messageId
-){}
-}
+    public record Message(
+        BounceMessageData data,
+        String attributes,
+        String messageId,
+        String publishTime
+    ) {}
 
+    public record BounceMessageData(
+        String emailAddress,
+        String historyId
+    ) {}
+}
