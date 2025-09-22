@@ -69,7 +69,7 @@ cleanup_docker_images() {
 # 설정 변수
 DOCKER_REGISTRY="prunsoli"
 PROJECT_NAME="yongji-backend"
-DOCKER_HISTORY_FILE="Docker-History.md"
+DOCKER_HISTORY_FILE="DOCKER_VERSIONS.md"
 CURRENT_BRANCH=$(git branch --show-current)
 CURRENT_DATE=$(date '+%Y-%m-%d')
 CURRENT_TIME=$(date '+%H:%M:%S')
@@ -92,15 +92,15 @@ fi
 # SSH 서버 정보 (환경변수로 설정 권장)
 SSH_HOST="${SSH_HOST:-your-server.com}"
 SSH_USER="${SSH_USER:-ubuntu}"
-SSH_KEY_PATH="${SSH_KEY_PATH:-~/.ssh/id_rsa}"
-REMOTE_COMPOSE_PATH="${REMOTE_COMPOSE_PATH:-/opt/withyou}"
+x="${SSH_KEY_PATH:-~/.ssh/id_rsa}"
+REMOTE_COMPOSE_PATH="${REMOTE_COMPOSE_PATH:-/opt/yongjibus}"
 
 # 배포 설명 (선택적)
 DEPLOY_DESCRIPTION="${2:-Manual local deployment}"
 
 echo ""
 echo "🚀 ============================================="
-echo "🚀   WithYou 로컬 Docker 배포 파이프라인"
+echo "🚀   YongJiBus 로컬 Docker 배포 파이프라인"
 echo "🚀 ============================================="
 echo ""
 log_info "브랜치: ${CURRENT_BRANCH}"
@@ -152,28 +152,38 @@ else
     exit 1
 fi
 
-# 2. Docker 이미지 빌드 및 푸시
-log_step "2단계: Docker 이미지 빌드 및 푸시 중..."
+# 2. Docker 이미지 빌드 및 푸시 (필요시에만)
+log_step "2단계: Docker 이미지 확인 및 빌드 중..."
 DOCKER_IMAGE="${DOCKER_REGISTRY}/${PROJECT_NAME}:${VERSION_TAG}"
 
-echo "🐳 Docker 이미지 빌드를 시작합니다..."
+echo "🔍 Docker 이미지 존재 여부 확인 중..."
 echo "   이미지: ${DOCKER_IMAGE}"
 
-# Docker buildx를 사용하여 multi-platform 빌드
-DOCKER_COMMAND="docker buildx build --platform linux/amd64 -t ${DOCKER_IMAGE} --push ."
-
-echo "실행 명령어: ${DOCKER_COMMAND}"
-
-if eval "${DOCKER_COMMAND}"; then
-    log_success "✅ Docker 이미지 빌드 및 푸시 완료: ${DOCKER_IMAGE}"
+# Docker Hub에서 이미지 존재 여부 확인
+if docker manifest inspect "${DOCKER_IMAGE}" >/dev/null 2>&1; then
+    log_success "✅ 이미지가 이미 존재합니다: ${DOCKER_IMAGE}"
+    log_info "빌드 과정을 건너뛰고 배포를 진행합니다."
+    DOCKER_COMMAND="이미지 존재 (빌드 건너뜀)"
 else
-    log_error "❌ Docker 이미지 빌드 실패!"
-    echo ""
-    echo "Docker 빌드 실패 시 확인사항:"
-    echo "1. Docker Hub 로그인 상태 확인: docker login"
-    echo "2. 네트워크 연결 상태 확인"
-    echo "3. Dockerfile 문법 오류 확인"
-    exit 1
+    log_info "📦 이미지가 존재하지 않습니다. 새로 빌드합니다."
+    echo "🐳 Docker 이미지 빌드를 시작합니다..."
+    
+    # Docker buildx를 사용하여 multi-platform 빌드
+    DOCKER_COMMAND="docker buildx build --platform linux/amd64 -t ${DOCKER_IMAGE} --push ."
+    
+    echo "실행 명령어: ${DOCKER_COMMAND}"
+    
+    if eval "${DOCKER_COMMAND}"; then
+        log_success "✅ Docker 이미지 빌드 및 푸시 완료: ${DOCKER_IMAGE}"
+    else
+        log_error "❌ Docker 이미지 빌드 실패!"
+        echo ""
+        echo "Docker 빌드 실패 시 확인사항:"
+        echo "1. Docker Hub 로그인 상태 확인: docker login"
+        echo "2. 네트워크 연결 상태 확인"
+        echo "3. Dockerfile 문법 오류 확인"
+        exit 1
+    fi
 fi
 
 # 3. Docker-History.md 업데이트
@@ -253,7 +263,7 @@ else
                 cp docker-compose.yml docker-compose.yml.backup.\$(date +%Y%m%d_%H%M%S)
                 
                 # 이미지 태그 업데이트
-                sed -i "s|image: prunsoli/withyou-test:.*|image: ${DOCKER_IMAGE}|g" docker-compose.yml
+                sed -i "s|image: prunsoli/yongji-backend:.*|image: ${DOCKER_IMAGE}|g" docker-compose.yml
                 
                 echo "✅ docker-compose.yml 이미지 태그 업데이트 완료"
                 echo "📋 업데이트된 이미지: ${DOCKER_IMAGE}"
@@ -277,7 +287,7 @@ else
                     echo "🧹 불필요한 Docker 이미지 정리 중..."
                     
                     # 서버에서 이전 버전 이미지들 정리
-                    OLD_IMAGES=\$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "prunsoli/withyou-test" | grep -v "${VERSION_TAG}" || true)
+                    OLD_IMAGES=\$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "prunsoli/yongji-backend" | grep -v "${VERSION_TAG}" || true)
                     
                     if [ ! -z "\$OLD_IMAGES" ]; then
                         echo "🗑️ 삭제할 서버의 이전 이미지들:"
@@ -312,9 +322,9 @@ else
             else
                 echo "❌ docker-compose.yml 파일이 없습니다."
                 echo "수동으로 컨테이너를 재시작하세요:"
-                echo "docker stop withyou-app || true"
-                echo "docker rm withyou-app || true"
-                echo "docker run -d --name withyou-app -p 8080:8080 ${DOCKER_IMAGE}"
+                echo "docker stop yongji-backend || true"
+                echo "docker rm yongji-backend || true"
+                echo "docker run -d --name yongji-backend -p 8080:8080 ${DOCKER_IMAGE}"
             fi
             
             echo "🎉 서버 배포 완료!"
@@ -388,6 +398,6 @@ echo "   예: ./deploy-local.sh 0.0.6 \"로그인 기능 추가\""
 echo ""
 echo "🧹 Docker 이미지 관리:"
 echo "   - 성공적인 배포 시 이전 버전 이미지 자동 정리"
-echo "   - 수동 정리: docker images | grep prunsoli/withyou-test"
+echo "   - 수동 정리: docker images | grep prunsoli/yongji-backend"
 echo "   - 전체 정리: docker system prune -a"
 echo ""

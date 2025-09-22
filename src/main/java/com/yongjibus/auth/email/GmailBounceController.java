@@ -1,40 +1,47 @@
 package com.yongjibus.auth.email;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Base64;
 import java.util.Map;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Controller
 @RequestMapping("/gmail/bounce")
 @RequiredArgsConstructor
+@Slf4j
 class GmailBounceController {
 
     private final EmailBounceService emailBounceService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @PostMapping("/push-notifications")
-    public void handlePushNotification(@RequestBody Map<String, Object> payload) {
+    @PostMapping("/push-notification")
+    public ResponseEntity<Void> handlePushNotification(@RequestBody GmailBounceMessageDTO dto) {
         try {
-            Map<String, Object> message = (Map<String, Object>) payload.get("message");
-            String data = (String) message.get("data");
-            String decodedData = new String(Base64.getDecoder().decode(data));
-
-            Map<String, String> notificationData = objectMapper.readValue(decodedData, Map.class);
-            String historyId = notificationData.get("historyId");
-
+            log.info("Received Gmail bounce notification: {}", dto);
+            
+            String historyId = dto.message().historyId();   
+        
             if (historyId != null) {
+                log.info("Processing bounce notification for historyId: {}", historyId);
                 emailBounceService.processBounceNotification(historyId);
+                return ResponseEntity.ok().build();
+            } else {
+                log.warn("No historyId found in notification data");
+                return ResponseEntity.badRequest().build();
             }
         } catch (Exception e) {
-            // 로깅
+            log.error("Error processing Gmail bounce notification", e);
+            return ResponseEntity.internalServerError().build();
         }
     }
 }

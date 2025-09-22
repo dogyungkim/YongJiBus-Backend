@@ -41,7 +41,7 @@ public class GmailApiService {
 
         var clientSecrets = GoogleClientSecrets.load(
                 jsonFactory,
-                new InputStreamReader(GmailOAuthTokenGetter.class.getResourceAsStream(CREDENTIALS_FILE_PATH))
+                new InputStreamReader(GmailApiService.class.getResourceAsStream(CREDENTIALS_FILE_PATH))
         );
 
         var flow = new GoogleAuthorizationCodeFlow.Builder(

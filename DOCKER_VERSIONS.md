@@ -2,11 +2,12 @@
 
 ## Version History
 
-| Version | Date | Description | Image Tag | Changes |
-|---------|------|-------------|-----------|---------|
-| 0.0.18 | 2025-06-17 | HTTPS 적용 과정 | `yongji-backend:0.0.18` | AWS 타겟그룹 Health Check 기능 추가 |
-| 0.0.19 | 2025-06-17 | HTTPS 적용 과정 | `yongji-backend:0.0.19` | Spring Security Health 엔드포인트 추가 |
-| 0.0.20 | 2025-06-17 | HTTPS 적용 과정 | `yongji-backend:0.0.20` | HealthController 오류 해결 |
+| Date       | Time     | Image                               | Build Info                   | Platform   | Message |
+|------------|----------|-------------------------------------|----------------------------------|------------|---------|
+| 2025-09-22 | 00:45:42 | `prunsoli/yongji-backend:0.0.21`    | `이미지 존재 (빌드 건너뜀)`       | linux/amd64 | feat: 배포 스크립트 작성 |
+| 2025-06-17 | -        | `prunsoli/yongji-backend:0.0.18`    | -                                | linux/amd64 | HTTPS 적용 과정 · AWS 타겟그룹 Health Check 기능 추가 |
+| 2025-06-17 | -        | `prunsoli/yongji-backend:0.0.19`    | -                                | linux/amd64 | HTTPS 적용 과정 · Spring Security Health 엔드포인트 추가 |
+| 2025-06-17 | -        | `prunsoli/yongji-backend:0.0.20`    | -                                | linux/amd64 | HTTPS 적용 과정 · HealthController 오류 해결 |
 
 
 ## Version Naming Convention

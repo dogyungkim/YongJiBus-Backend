@@ -45,7 +45,8 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
         "/swagger-ui.html", 
         "/swagger-resources/**",
         "/webjars/**",
-        "/health"
+        "/health",
+        "/gmail/bounce"
     );
 
     @Override

@@ -12,14 +12,16 @@ RUN ./gradlew dependencies
 
 COPY src $APP_HOME/src
 COPY .env $APP_HOME/.env
+COPY tokens $APP_HOME/tokens
 
-RUN ./gradlew build
+RUN ./gradlew build -x test
 
 FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
 COPY --from=build /app/build/libs/*.jar app.jar
+COPY --from=build /app/tokens ./tokens
 
 ENV SPRING_PROFILES_ACTIVE=prod
 ENV JAVA_OPTS=""

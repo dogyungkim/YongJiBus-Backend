@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import com.google.api.services.gmail.model.History;
 import com.google.api.services.gmail.model.HistoryMessageAdded;
@@ -13,6 +14,7 @@ import com.yongjibus.global.infra.gmail.GmailApiService;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EmailBounceService {
     private final EmailPendingRepository emailPendingRepository;
 
@@ -36,7 +38,7 @@ public class EmailBounceService {
 
                         if (failedEmailAddress != null && emailPendingRepository.isEmailPending(failedEmailAddress)) {
                             // 이메일이 전송 실패한 경우
-
+                            log.error("이메일 전송 실패: {}", failedEmailAddress);
                         }
                     }
                 }
