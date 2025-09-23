@@ -4,7 +4,6 @@
 
 | Date       | Time     | Image                               | Docker Command                 | Platform   | Message |
 |------------|----------|-------------------------------------|----------------------------------|------------|---------|
-| 2025-09-23 | 00:38:34 | `prunsoli/yongji-backend:0.0.22` | `docker buildx build --platform linux/amd64 -t prunsoli/yongji-backend:0.0.22 --push .` | linux/amd64 | feat: Bounce Mail 처리 |
 | 2025-09-22 | 00:45:42 | `prunsoli/yongji-backend:0.0.21`    | `이미지 존재 (빌드 건너뜀)`       | linux/amd64 | feat: 배포 스크립트 작성 |
 | 2025-06-17 | -        | `prunsoli/yongji-backend:0.0.20`    | -                                | linux/amd64 | HTTPS 적용 과정 · HealthController 오류 해결 |
 | 2025-06-17 | -        | `prunsoli/yongji-backend:0.0.19`    | -                                | linux/amd64 | HTTPS 적용 과정 · Spring Security Health 엔드포인트 추가 |

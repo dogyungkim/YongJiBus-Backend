@@ -27,7 +27,7 @@ public class GmailApiServiceTest {
     @Test
     @DisplayName("[IT] History ID를 사용하여 메시지 변경 내역을 가져온다")
     void getHistory_integration() throws Exception {
-        BigInteger startHistoryId = BigInteger.valueOf(597888);
+        BigInteger startHistoryId = BigInteger.valueOf(608458);
         ListHistoryResponse history = gmailApiService.getHistory(startHistoryId);
         assertThat(history).isNotNull();
     }
@@ -35,7 +35,7 @@ public class GmailApiServiceTest {
     @Test
     @DisplayName("[IT] 메시지 ID를 사용하여 메시지를 가져온다")
     void getMessage_integration() throws Exception {
-        String messageId = "1995c00adf8db665";
+        String messageId = "1997677b68e38d3d";
         Message message = gmailApiService.getMessage(messageId);
         assertThat(message).isNotNull();
     }

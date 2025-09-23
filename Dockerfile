@@ -4,7 +4,7 @@ ENV APP_HOME=/app
 WORKDIR $APP_HOME
 
 COPY gradlew $APP_HOME/gradlew
-COPY gradle $APP_HOME/gradle
+COPY gradle/ $APP_HOME/gradle/
 COPY build.gradle $APP_HOME/
 
 RUN chmod +x ./gradlew
@@ -14,7 +14,7 @@ COPY src $APP_HOME/src
 COPY .env $APP_HOME/.env
 COPY tokens $APP_HOME/tokens
 
-RUN ./gradlew build -x test
+RUN ./gradlew build -x test --no-daemon
 
 FROM eclipse-temurin:17-jre-alpine
 

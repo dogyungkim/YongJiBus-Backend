@@ -205,7 +205,7 @@ TEMP_FILE=$(mktemp)
 head -n 6 "${DOCKER_HISTORY_FILE}" > "${TEMP_FILE}"
 
 # 새로운 엔트리 추가
-echo "| ${CURRENT_DATE} | ${CURRENT_TIME} | \`${DOCKER_REGISTRY}/${PROJECT_NAME}:${VERSION_TAG}\` | \`${DOCKER_COMMAND}\` | linux/amd64 | ${COMMIT_MESSAGE} |" >> "${TEMP_FILE}"
+echo "| ${CURRENT_DATE} | ${CURRENT_TIME} | \`${DOCKER_REGISTRY}/${PROJECT_NAME}:${VERSION_TAG}\` | \`${DOCKER_COMMAND}\` | linux/amd64 | ${DEPLOY_DESCRIPTION} |" >> "${TEMP_FILE}"
 
 # 기존 데이터 부분 (8줄부터 끝까지)
 tail -n +7 "${DOCKER_HISTORY_FILE}" >> "${TEMP_FILE}"

@@ -61,6 +61,7 @@ HELP.md
 src/main/resources/firebase/
 
 credentials.json
+pubsub-credential.json
 tokens/
 
 YongJiBus-Features.md

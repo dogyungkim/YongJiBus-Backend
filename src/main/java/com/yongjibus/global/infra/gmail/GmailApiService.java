@@ -65,23 +65,23 @@ public class GmailApiService {
      * History ID를 사용하여 메시지 추가 내역을 가져옵니다.
      */
     public ListHistoryResponse getHistory(BigInteger startHistoryId) throws IOException {
-        return gmailService.users().history()
+        ListHistoryResponse history = gmailService.users().history()
                 .list(USER_ID)
                 .setStartHistoryId(startHistoryId)
                 .setHistoryTypes(List.of("messageAdded"))
                 .execute();
+        return history;
     }
 
     /**
      * 메시지 ID를 사용하여 메시지를 가져옵니다.
      */
     public Message getMessage(String messageId) throws IOException {
-        return gmailService
-                .users()
-                .messages()
+        Message message = gmailService.users().messages()
                 .get(USER_ID, messageId)
                 .setFormat("metadata")
                 .execute();
+        return message;
     }
 
     /**
@@ -91,6 +91,7 @@ public class GmailApiService {
     public void watchBounceMailBox() throws IOException {
         WatchRequest watchRequest = new WatchRequest()
             .setLabelIds(List.of("Label_6"))
+            .setLabelFilterAction("include")
             .setTopicName(TOPIC_NAME);
 
        WatchResponse watchResponse = gmailService.users().watch(USER_ID, watchRequest).execute();

@@ -10,11 +10,11 @@ import lombok.extern.slf4j.Slf4j;
 import com.google.api.services.gmail.model.History;
 import com.google.api.services.gmail.model.HistoryMessageAdded;
 import com.google.api.services.gmail.model.Message;
-import com.yongjibus.global.infra.gmail.GmailApiService;
+import com.yongjibus.global.infra.gmail.GmailApiService;    
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
+@RequiredArgsConstructor
 public class EmailBounceService {
     private final EmailPendingRepository emailPendingRepository;
 
@@ -23,8 +23,9 @@ public class EmailBounceService {
     public void processBounceNotification(String historyId) {
         try {
             var history = gmailApiService.getHistory(BigInteger.valueOf(Long.parseLong(historyId)));
-            if (history.getHistory() == null) return;
-
+            if (history.getHistory() == null) {
+                throw new RuntimeException("History is null");
+            }
             for (History h : history.getHistory()) {
                 // 새로운 메시지가 추가된 경우만 처리
                 if (h.getMessagesAdded() != null) {
@@ -41,6 +42,8 @@ public class EmailBounceService {
                             log.error("이메일 전송 실패: {}", failedEmailAddress);
                         }
                     }
+                } else {
+                    log.debug("MessagesAdded is null");
                 }
             }
         } catch (Exception e) {
