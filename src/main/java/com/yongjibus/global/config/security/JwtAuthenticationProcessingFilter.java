@@ -41,11 +41,9 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
         "/day",
         "/arrivaltime",
         "/swagger-ui",
-        "/api-docs", 
-        "/swagger-ui.html", 
-        "/swagger-resources/**",
-        "/webjars/**",
-        "/health"
+        "/v3/api-docs",
+        "/health",
+        "/gmail/bounce"
     );
 
     @Override

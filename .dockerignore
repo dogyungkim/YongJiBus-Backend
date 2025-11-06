@@ -1,0 +1,58 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+DOCKER_VERSIONS.md
+Architecture.png
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Build outputs
+build/
+out/
+bin/
+.gradle/
+
+# Test reports
+build/reports/
+build/test-results/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files (will be copied explicitly)
+.env.local
+.env.development
+.env.test
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Deployment scripts
+deploy-local.sh
+deploy.env
+
+# Images directory (if not needed in container)
+images/
+
+# (keep Gradle wrapper jar so Docker build can run ./gradlew)

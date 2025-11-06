@@ -1,0 +1,76 @@
+---
+description: Auth process, Auth endpoint, Auth API
+alwaysApply: false
+---
+# 인증(Auth) 모듈 API 문서
+
+## Endpoint
+
+- `POST /auth/email` - 이메일 인증 코드 발송
+- `POST /auth/email/verify` - 이메일 인증 코드 확인
+- `GET /auth/username/{username}/exists` - 사용자 이름 중복 확인
+- `POST /auth/signup` - 회원가입
+- `POST /auth/login` - 로그인
+- `POST /auth/token/refresh` - 액세스 토큰 갱신
+- `DELETE /auth/logout` - 로그아웃
+- `DELETE /auth/signout` - 회원 탈퇴
+
+## RESPONSE / REQUEST 구성
+
+### Request DTOs
+- `EmailAuthCodeRequestDTO` - 이메일 인증 코드 발송 요청 (email)
+- `EmailVerifyRequestDTO` - 이메일 인증 코드 확인 요청 (email, authCode)
+- `LoginRequestDTO` - 로그인 요청 (email, password)
+- `SignupRequestDTO` - 회원가입 요청 (email, password, name, username)
+
+### Response DTOs
+- `AuthTokenDTO` - 인증 토큰 응답 (accessToken, refreshToken)
+- `UsernameCheckResponseDTO` - 사용자 이름 중복 확인 응답 (exists)
+
+## 관련 서비스 함수 내용
+
+### AuthService 주요 메서드
+- `sendAuthEmail(String email)` - 이메일 인증 코드 생성 및 발송
+- `verifyAuthCode(String email, String authCode)` - 이메일 인증 코드 유효성 검증
+- `login(String email, String password)` - 사용자 로그인 처리 및 JWT 토큰 발급
+- `signup(Member member)` - 회원가입 처리 및 JWT 토큰 발급
+- `refreshAccessToken(String refreshToken, Member member)` - 액세스 토큰 갱신
+- `logout(Member member)` - 로그아웃 처리 (RefreshToken 무효화)
+- `signoutMember(Member member)` - 회원 탈퇴 처리
+- `checkUsernameExists(String username)` - 사용자 이름 중복 확인
+# 인증(Auth) 모듈 API 문서
+
+## Endpoint
+
+- `POST /auth/email` - 이메일 인증 코드 발송
+- `POST /auth/email/verify` - 이메일 인증 코드 확인
+- `GET /auth/username/{username}/exists` - 사용자 이름 중복 확인
+- `POST /auth/signup` - 회원가입
+- `POST /auth/login` - 로그인
+- `POST /auth/token/refresh` - 액세스 토큰 갱신
+- `DELETE /auth/logout` - 로그아웃
+- `DELETE /auth/signout` - 회원 탈퇴
+
+## RESPONSE / REQUEST 구성
+
+### Request DTOs
+- `EmailAuthCodeRequestDTO` - 이메일 인증 코드 발송 요청 (email)
+- `EmailVerifyRequestDTO` - 이메일 인증 코드 확인 요청 (email, authCode)
+- `LoginRequestDTO` - 로그인 요청 (email, password)
+- `SignupRequestDTO` - 회원가입 요청 (email, password, name, username)
+
+### Response DTOs
+- `AuthTokenDTO` - 인증 토큰 응답 (accessToken, refreshToken)
+- `UsernameCheckResponseDTO` - 사용자 이름 중복 확인 응답 (exists)
+
+## 관련 서비스 함수 내용
+
+### AuthService 주요 메서드
+- `sendAuthEmail(String email)` - 이메일 인증 코드 생성 및 발송
+- `verifyAuthCode(String email, String authCode)` - 이메일 인증 코드 유효성 검증
+- `login(String email, String password)` - 사용자 로그인 처리 및 JWT 토큰 발급
+- `signup(Member member)` - 회원가입 처리 및 JWT 토큰 발급
+- `refreshAccessToken(String refreshToken, Member member)` - 액세스 토큰 갱신
+- `logout(Member member)` - 로그아웃 처리 (RefreshToken 무효화)
+- `signoutMember(Member member)` - 회원 탈퇴 처리
+- `checkUsernameExists(String username)` - 사용자 이름 중복 확인

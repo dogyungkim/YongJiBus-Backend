@@ -18,6 +18,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -30,7 +31,8 @@ public class DayTypeService {
 
     @PostConstruct
     private void init(){
-        loadHolidayInfo();
+        // 국가 데이터 센터 화재로 인한 공휴일 정보 저장 오류 발생으로 인해 일단 주석처리
+        //loadHolidayInfo();
     }
 
     /**
@@ -60,6 +62,8 @@ public class DayTypeService {
         try {
             HolidayInfoExternalResponseDTO dto = parseHolidayXmlResponse(response);
             dayTypeRepository.setHolidayData(dto.toEntity());
+
+            //dayTypeRepository.setHolidayData(List.of(new DateInfo(LocalDate.of(2025, 1, 1), true, "신정")));
         } catch (Exception e) {
             throw new RuntimeException("Failed to get holiday data", e);
         }

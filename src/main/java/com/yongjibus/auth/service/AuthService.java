@@ -6,6 +6,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.yongjibus.auth.email.EmailBounceService;
+import com.yongjibus.auth.email.EmailTokenService;
 import com.yongjibus.global.error.code.ErrorCode;
 import com.yongjibus.global.error.exception.AuthException;
 import com.yongjibus.global.infra.email.EmailService;
@@ -25,16 +27,21 @@ public class AuthService {
     private final EmailTokenService emailTokenService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+
+    private final EmailBounceService emailBounceService;
     /**
      * 이메일 인증 코드를 생성하고 발송합니다.
      * 
      * @param email 인증 코드를 받을 이메일 주소
      */
+    @Transactional
     public String sendAuthEmail(String email) {
         String authCode = AuthCodeGenerator.generateCode();
 
         emailTokenService.setAuthCode(email, authCode);
         emailService.sendAuthEmail(email, authCode);
+        // 발송 요청한 이메일 저장 (이메일 발송 요청 추적)
+        emailBounceService.saveEmailPending(email);
         return authCode;
     }
 
@@ -45,6 +52,7 @@ public class AuthService {
      * @param authCode 사용자가 입력한 인증 코드
      * @return 인증 성공 여부
      */
+    @Transactional
     public void verifyAuthCode(String email, String authCode) {
         String storedAuthCode = emailTokenService.getAuthCode(email);
 
@@ -55,7 +63,9 @@ public class AuthService {
         if (authCode.equals(storedAuthCode)) {
             emailTokenService.deleteAuthCode(email);
             emailTokenService.setVerified(email);
-        } else {
+            // 발송 요청한 이메일 삭제 (이메일 발송 요청 추적)
+            emailBounceService.deleteEmailPending(email);
+        } else {        
             throw new AuthException(ErrorCode.INVALID_AUTH_CODE);
         }
     }
@@ -122,6 +132,7 @@ public class AuthService {
      * @return 새로 발급된 AccessToken과 RefreshToken의 리스트 [accessToken, refreshToken]
      * @throws AuthException RefreshToken이 유효하지 않을 경우
      */
+    @Transactional
     public List<String> refreshAccessToken(String refreshToken, Member member) {
         if (!jwtService.validateRefreshToken(refreshToken)) {
             throw new AuthException(ErrorCode.INVALID_REFRESH_TOKEN);

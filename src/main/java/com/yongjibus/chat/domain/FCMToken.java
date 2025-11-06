@@ -12,6 +12,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import com.yongjibus.member.domain.Member;
 
 @Entity
+@Table(name = "fcmtoken")
 @Getter
 @NoArgsConstructor
 public class FCMToken {

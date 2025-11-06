@@ -39,7 +39,7 @@ public class JwtService {
     private final String BEARER = "Bearer ";
     private final String ACCESS_HEADER = "Authorization";
 
-    private final JwtCacheService jwtCacheService;
+    private final JwtRepository jwtRepository;
 
     @PostConstruct
     public void init() {
@@ -55,7 +55,7 @@ public class JwtService {
      */
     public String createAndSaveRefreshToken(String email) {
         String refreshToken = createRefreshToken(email);
-        jwtCacheService.setRefreshToken(email, refreshToken);
+        jwtRepository.setRefreshToken(email, refreshToken);
         return refreshToken;
     }
 
@@ -93,7 +93,7 @@ public class JwtService {
         }
 
         String email = getEmailFromToken(refreshToken);
-        String storedToken = jwtCacheService.getRefreshToken(email);
+        String storedToken = jwtRepository.getRefreshToken(email);
         return storedToken != null && storedToken.equals(refreshToken);
     }
 
@@ -117,12 +117,12 @@ public class JwtService {
      * @return 새로 생성된 Refresh 토큰
      */
     public String rotateRefreshToken(String email) {
-        jwtCacheService.deleteRefreshToken(email);
+        jwtRepository.deleteRefreshToken(email);
         return createAndSaveRefreshToken(email);
     }
 
     public void deleteRefreshToken(String email) {
-        jwtCacheService.deleteRefreshToken(email);
+        jwtRepository.deleteRefreshToken(email);
     }
 
     /**

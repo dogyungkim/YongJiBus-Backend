@@ -6,6 +6,9 @@ import lombok.Getter;
 
 @Getter
 public enum ErrorCode {
+    //Common
+    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
+
     // 인증 관련 오류
     EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "이메일 인증이 필요합니다."),
     INVALID_AUTH_CODE(HttpStatus.BAD_REQUEST, "유효하지 않은 인증 코드입니다."),
