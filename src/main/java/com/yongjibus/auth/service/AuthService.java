@@ -6,7 +6,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.yongjibus.auth.email.EmailPendingRepository;
+import com.yongjibus.auth.email.EmailBounceService;
 import com.yongjibus.auth.email.EmailTokenService;
 import com.yongjibus.global.error.code.ErrorCode;
 import com.yongjibus.global.error.exception.AuthException;
@@ -28,7 +28,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    private final EmailPendingRepository emailPendingRepository;
+    private final EmailBounceService emailBounceService;
     /**
      * 이메일 인증 코드를 생성하고 발송합니다.
      * 
@@ -41,7 +41,7 @@ public class AuthService {
         emailTokenService.setAuthCode(email, authCode);
         emailService.sendAuthEmail(email, authCode);
         // 발송 요청한 이메일 저장 (이메일 발송 요청 추적)
-        emailPendingRepository.saveEmailPending(email);
+        emailBounceService.saveEmailPending(email);
         return authCode;
     }
 
@@ -64,7 +64,7 @@ public class AuthService {
             emailTokenService.deleteAuthCode(email);
             emailTokenService.setVerified(email);
             // 발송 요청한 이메일 삭제 (이메일 발송 요청 추적)
-            emailPendingRepository.deleteEmailPending(email);
+            emailBounceService.deleteEmailPending(email);
         } else {        
             throw new AuthException(ErrorCode.INVALID_AUTH_CODE);
         }

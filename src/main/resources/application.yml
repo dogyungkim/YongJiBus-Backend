@@ -8,12 +8,3 @@ spring:
     active: local
   config:
     import: optional:file:.env[.properties]
-
-springdoc:
-  swagger-ui:
-    path: /swagger-ui.html  # 스웨거 UI 접속 경로 (기본값)
-    tags-sorter: alpha  # 태그 알파벳 순 정렬
-    operations-sorter: method  # HTTP 메소드 기준 정렬
-
-  show-actuator: false  # Actuator 엔드포인트 표시 여부
-  default-produces-media-type: application/json

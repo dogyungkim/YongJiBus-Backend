@@ -2,6 +2,7 @@ package com.yongjibus.auth.email;
 
 import java.math.BigInteger;
 
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -39,7 +40,7 @@ public class EmailBounceService {
 
                         if (failedEmailAddress != null && emailPendingRepository.isEmailPending(failedEmailAddress)) {
                             // 이메일이 전송 실패한 경우
-                            log.error("이메일 전송 실패: {}", failedEmailAddress);
+                            emailPendingRepository.setEmailPendingStatus(failedEmailAddress, true);
                         }
                     }
                 } else {
@@ -57,5 +58,25 @@ public class EmailBounceService {
             .map(h -> h.getValue()) // 여러 주소면 콤마로 구분됨
             .findFirst()
             .orElse(null);
+    }
+
+    @Transactional
+    public void saveEmailPending(String emailAddress) {
+        emailPendingRepository.saveEmailPending(emailAddress);
+    }
+
+    @Transactional
+    public void setEmailPendingStatus(String emailAddress, boolean isPending) {
+        emailPendingRepository.setEmailPendingStatus(emailAddress, isPending);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isEmailPending(String emailAddress) {
+        return emailPendingRepository.isEmailPending(emailAddress);
+    }
+
+    @Transactional
+    public void deleteEmailPending(String emailAddress) {
+        emailPendingRepository.deleteEmailPending(emailAddress);
     }
 }
