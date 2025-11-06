@@ -43,12 +43,7 @@ public class SecurityConfig {
                 .requestMatchers("/gmail/bounce/**").permitAll() // Gmail 바운스 메일 처리 엔드포인트 인증 제외
                 .requestMatchers("/auth/**").authenticated() // /auth 하위의 나머지 모든 경로는 인증 필요
                 .requestMatchers("/actuator/**", "/vacation/**", "/day", "/health").permitAll()
-                .requestMatchers("/api-docs/**", 
-                                "/swagger-ui/**", 
-                                "/swagger-ui.html", 
-                                "/swagger-resources/**",
-                                "/webjars/**",
-                                "/v3/api-docs/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/arrivaltime/**").permitAll()
                 .anyRequest().authenticated()
             )

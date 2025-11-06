@@ -2,6 +2,7 @@ package com.yongjibus.daytype;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.client.RestClientTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
@@ -26,6 +27,9 @@ class HolidayApiClientTest {
     @Autowired
     private MockRestServiceServer server;
 
+    @Value("${secrets.open_api_key}")
+    private String openApiKey;
+
     @Test
     @DisplayName("휴일 정보를 성공적으로 가져오는 경우")
     void fetchHolidayInfo_Success() throws Exception {
@@ -49,7 +53,9 @@ class HolidayApiClientTest {
             </response>
             """;
 
-        server.expect(requestTo("http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?solYear=2024&solMonth=01&serviceKey=G3nugGM7tSyjGHLR7YqbaxEW6C%2Bdl55OKHSzZT8jyiCN6A1IQtR6SjXrA9m5BQyrutIEsDMNb3kt57vagxNczg%3D%3D"))
+        String expectedUrl = String.format(
+            "http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?solYear=2024&solMonth=01&serviceKey=" + openApiKey);
+        server.expect(requestTo(expectedUrl))
             .andRespond(withSuccess(sampleXmlResponse, MediaType.APPLICATION_XML));
 
         // when

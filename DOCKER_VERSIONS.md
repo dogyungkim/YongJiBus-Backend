@@ -4,6 +4,9 @@
 
 | Date       | Time     | Image                               | Docker Command                 | Platform   | Message |
 |------------|----------|-------------------------------------|----------------------------------|------------|---------|
+| 2025-11-06 | 20:55:10 | `prunsoli/yongji-backend:0.0.24` | `docker buildx build --platform linux/amd64 -t prunsoli/yongji-backend:0.0.24 --push .` | linux/amd64 | 데이터 센터 화재로 인한 관련 API 수정 |
+| 2025-11-06 | 20:40:15 | `prunsoli/yongji-backend:0.0.23` | `docker buildx build --platform linux/amd64 -t prunsoli/yongji-backend:0.0.23 --push .` | linux/amd64 | 만료 Credential 갱신 |
+| 2025-10-13 | 02:03:04 | `prunsoli/yongji-backend:0.0.22` | `docker buildx build --platform linux/amd64 -t prunsoli/yongji-backend:0.0.22 --push .` | linux/amd64 | feat: Gmail Bounce Check |
 | 2025-09-22 | 00:45:42 | `prunsoli/yongji-backend:0.0.21`    | `이미지 존재 (빌드 건너뜀)`       | linux/amd64 | feat: 배포 스크립트 작성 |
 | 2025-06-17 | -        | `prunsoli/yongji-backend:0.0.20`    | -                                | linux/amd64 | HTTPS 적용 과정 · HealthController 오류 해결 |
 | 2025-06-17 | -        | `prunsoli/yongji-backend:0.0.19`    | -                                | linux/amd64 | HTTPS 적용 과정 · Spring Security Health 엔드포인트 추가 |
