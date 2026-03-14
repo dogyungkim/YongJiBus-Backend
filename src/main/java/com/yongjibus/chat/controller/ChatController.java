@@ -1,6 +1,6 @@
 package com.yongjibus.chat.controller;
 
-import java.time.LocalDateTime;
+import java.security.Principal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -8,6 +8,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.yongjibus.auth.domain.MemberDetail;
-import com.yongjibus.chat.domain.ChatMessage;
 import com.yongjibus.chat.domain.ChatRoom;
 import com.yongjibus.chat.domain.FCMToken;
 import com.yongjibus.chat.controller.dto.ChatMessageDTO;
@@ -30,6 +31,8 @@ import com.yongjibus.chat.service.ChatService;
 import com.yongjibus.chat.service.FCMTokenService;
 import com.yongjibus.global.common.response.YongJiResponse;
 import com.yongjibus.global.common.response.SliceResponse;
+import com.yongjibus.global.error.code.ErrorCode;
+import com.yongjibus.global.error.exception.StompException;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -37,6 +40,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -181,15 +185,14 @@ public class ChatController {
     @MessageMapping("/chat/message")
     public void sendMessage(
             @Parameter(description = "전송할 메시지 정보", required = true)
-            @RequestBody ChatMessageDTO message) {
-        ChatMessage newMessage = ChatMessage.builder()
-                .messageType(message.messageType())
-                .content(message.content())
-                .sender(message.sender())
-                .roomId(message.roomId())
-                .createdAt(LocalDateTime.now())
-                .build();
-        chatService.processAndSendMessage(newMessage);
+            @Valid @Payload ChatMessageDTO message,
+            Principal principal) {
+        if (!(principal instanceof Authentication authentication)
+                || !(authentication.getPrincipal() instanceof MemberDetail memberDetail)) {
+            throw new StompException(ErrorCode.UNAUTHORIZED);
+        }
+
+        chatService.sendMessage(memberDetail.getMember(), message.roomId(), message.content());
     }
     
     /**

@@ -1,12 +1,13 @@
 package com.yongjibus.chat.controller.dto;
 
-import java.time.LocalDateTime;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
-import com.yongjibus.chat.domain.ChatMessage;
-import com.yongjibus.chat.domain.ChatMessage.MessageType;
+public record ChatMessageDTO(
+    @NotBlank(message = "메시지 내용을 입력해주세요.")
+    String content,
 
-public record ChatMessageDTO(MessageType messageType, String content, String sender, Long roomId, LocalDateTime createdAt) {
-    public static ChatMessageDTO from(ChatMessage message) {
-        return new ChatMessageDTO(message.getMessageType(), message.getContent(), message.getSender(), message.getRoomId(), message.getCreatedAt());
-    }
-} 
+    @NotNull(message = "채팅방 ID가 필요합니다.")
+    Long roomId
+) {
+}

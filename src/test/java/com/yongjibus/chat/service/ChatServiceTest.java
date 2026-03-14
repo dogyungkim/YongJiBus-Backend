@@ -6,6 +6,7 @@ import com.yongjibus.chat.domain.ChatRoomMember;
 import com.yongjibus.chat.repository.ChatRepository;
 import com.yongjibus.chat.repository.ChatRoomMemberRepository;
 import com.yongjibus.chat.repository.ChatRoomRepository;
+import com.yongjibus.global.error.code.ErrorCode;
 import com.yongjibus.global.error.exception.ChatException;
 import com.yongjibus.global.infra.websocket.WebsocketSessionManager;
 import com.yongjibus.member.domain.Member;
@@ -32,12 +33,15 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -226,6 +230,45 @@ class ChatServiceTest {
         verify(chatRepository, times(1)).save(any(ChatMessage.class));
         verify(messagingTemplate, times(1)).convertAndSend(anyString(), any(ChatMessage.class));
     }
+
+    @Test
+    @DisplayName("메시지 전송 시 sender는 서버가 인증된 사용자명으로 채운다")
+    void sendMessage_ShouldUseAuthenticatedSender() {
+        // given
+        testChatRoom.addMember(testMember);
+        when(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom));
+        when(chatRoomMemberRepository.findByMemberAndChatRoomAndActiveTrue(testMember, testChatRoom))
+            .thenReturn(Optional.of(testChatRoomMember));
+        when(chatRepository.save(any(ChatMessage.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(websocketSessionManager.isSessionExists(anyString())).thenReturn(true);
+        doNothing().when(messagingTemplate).convertAndSend(anyString(), any(ChatMessage.class));
+
+        // when
+        chatService.sendMessage(testMember, 1L, "서버가 보낸 메시지");
+
+        // then
+        verify(chatRepository).save(argThat(message ->
+            message.getMessageType() == ChatMessage.MessageType.MESSAGE
+                && "서버가 보낸 메시지".equals(message.getContent())
+                && testMember.getUsername().equals(message.getSender())
+                && Long.valueOf(1L).equals(message.getRoomId())
+        ));
+        verify(messagingTemplate).convertAndSend(eq("/sub/chat/room/1"), any(ChatMessage.class));
+    }
+
+    @Test
+    @DisplayName("채팅방 참여자가 아니면 메시지를 보낼 수 없다")
+    void sendMessage_WhenSenderIsNotRoomMember_ShouldThrowForbidden() {
+        // given
+        when(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom));
+        when(chatRoomMemberRepository.findByMemberAndChatRoomAndActiveTrue(testMember, testChatRoom))
+            .thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> chatService.sendMessage(testMember, 1L, "실패"))
+            .isInstanceOf(ChatException.class)
+            .hasFieldOrPropertyWithValue("errorCode", ErrorCode.CHAT_ROOM_FORBIDDEN);
+    }
     
     @Test
     @DisplayName("채팅 메시지 조회 테스트")
@@ -236,6 +279,8 @@ class ChatServiceTest {
         Slice<ChatMessage> slice = new SliceImpl<>(messages, pageable, false);
         
         when(chatRoomRepository.findById(anyLong())).thenReturn(Optional.of(testChatRoom));
+        when(chatRoomMemberRepository.findByMemberAndChatRoomAndActiveTrue(any(), any()))
+            .thenReturn(Optional.of(testChatRoomMember));
         when(chatRoomMemberRepository.findJoinedAtByMemberAndChatRoom(any(), any()))
             .thenReturn(Optional.of(LocalDateTime.now().minusHours(1)));
         when(chatRepository.findMessagesAfterJoinTime(

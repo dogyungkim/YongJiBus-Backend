@@ -118,13 +118,7 @@ public class ChatService {
     public void leaveChatRoom(Long roomId, Member member) {
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
             .orElseThrow(() -> new ChatException(ErrorCode.CHAT_ROOM_NOT_FOUND));
-
-        boolean isMemberInChatRoom = chatRoom.getMembers().stream()
-            .anyMatch(m -> m.getId().equals(member.getId()));
-
-        if (!isMemberInChatRoom) {
-            throw new ChatException(ErrorCode.CHAT_ROOM_NOT_FOUND);
-        }
+        validateActiveMember(chatRoom, member);
         
         // 채팅방에서 멤버 제거
         chatRoom.removeMember(member);
@@ -151,6 +145,22 @@ public class ChatService {
     public ChatRoom getChatRoom(Long roomId) {
         return chatRoomRepository.findById(roomId)
             .orElseThrow(() -> new ChatException(ErrorCode.CHAT_ROOM_NOT_FOUND));
+    }
+
+    @Transactional
+    public void sendMessage(Member sender, Long roomId, String content) {
+        ChatRoom chatRoom = getChatRoom(roomId);
+        validateActiveMember(chatRoom, sender);
+
+        ChatMessage message = ChatMessage.builder()
+                .messageType(ChatMessage.MessageType.MESSAGE)
+                .content(content)
+                .sender(sender.getUsername())
+                .roomId(roomId)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        processAndSendMessage(message);
     }
 
     @Transactional
@@ -186,11 +196,12 @@ public class ChatService {
     public Slice<ChatMessage> getChatMessages(Long roomId, Member member, Pageable pageable) {
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
             .orElseThrow(() -> new ChatException(ErrorCode.CHAT_ROOM_NOT_FOUND));
+        validateActiveMember(chatRoom, member);
         
         // 사용자의 채팅방 입장 시간 조회
         LocalDateTime joinedAt = chatRoomMemberRepository
             .findJoinedAtByMemberAndChatRoom(member, chatRoom)
-            .orElseThrow(() -> new ChatException(ErrorCode.CHAT_ROOM_NOT_FOUND));
+            .orElseThrow(() -> new ChatException(ErrorCode.CHAT_ROOM_FORBIDDEN));
 
         // 입장 시간 이후의 메시지만 조회
         Slice<ChatMessage> messages = chatRepository.findMessagesAfterJoinTime(roomId, joinedAt, pageable);
@@ -204,5 +215,15 @@ public class ChatService {
             messages.getPageable(), 
             messages.hasNext()
         );
+    }
+
+    private void validateActiveMember(ChatRoom chatRoom, Member member) {
+        boolean isActiveMember = chatRoomMemberRepository
+            .findByMemberAndChatRoomAndActiveTrue(member, chatRoom)
+            .isPresent();
+
+        if (!isActiveMember) {
+            throw new ChatException(ErrorCode.CHAT_ROOM_FORBIDDEN);
+        }
     }
 }
