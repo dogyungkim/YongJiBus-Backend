@@ -6,10 +6,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.time.LocalDate;
 
@@ -18,13 +17,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@SpringBootTest
 class VacationServiceTest {
 
-    @MockBean
+    @Mock
     private VacationPeriodRepository vacationPeriodRepository;
 
-    @Autowired
+    @InjectMocks
     private VacationService vacationService;
 
     private VacationPeriod sampleVacationPeriod;
@@ -93,5 +91,35 @@ class VacationServiceTest {
 
         // then
         assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("방학 시작일도 방학으로 계산한다")
+    void isVacation_OnStartDate() {
+        // given
+        LocalDate testDate = sampleVacationPeriod.getStartDate();
+        when(vacationPeriodRepository.findByStartDateLessThanEqualAndEndDateGreaterThanEqual(testDate, testDate))
+                .thenReturn(sampleVacationPeriod);
+
+        // when
+        boolean result = vacationService.isVacation(testDate);
+
+        // then
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    @DisplayName("방학 종료일도 방학으로 계산한다")
+    void isVacation_OnEndDate() {
+        // given
+        LocalDate testDate = sampleVacationPeriod.getEndDate();
+        when(vacationPeriodRepository.findByStartDateLessThanEqualAndEndDateGreaterThanEqual(testDate, testDate))
+                .thenReturn(sampleVacationPeriod);
+
+        // when
+        boolean result = vacationService.isVacation(testDate);
+
+        // then
+        assertThat(result).isTrue();
     }
 } 

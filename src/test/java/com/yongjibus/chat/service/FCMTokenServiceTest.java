@@ -131,6 +131,39 @@ class FCMTokenServiceTest {
     }
 
     @Test
+    @DisplayName("활성화된 토큰을 Optional로 조회할 수 있다")
+    void findActiveTokenByMember_WithExistingToken_ShouldReturnOptional() {
+        // given
+        FCMToken token = FCMToken.builder()
+                .member(member)
+                .token("fcm-token")
+                .build();
+
+        given(fcmTokenRepository.findByMemberAndIsActiveTrue(member))
+                .willReturn(Optional.of(token));
+
+        // when
+        Optional<FCMToken> result = fcmTokenService.findActiveTokenByMember(member);
+
+        // then
+        assertThat(result).contains(token);
+    }
+
+    @Test
+    @DisplayName("활성화된 토큰이 없어도 Optional 조회는 예외를 던지지 않는다")
+    void findActiveTokenByMember_WithoutExistingToken_ShouldReturnEmpty() {
+        // given
+        given(fcmTokenRepository.findByMemberAndIsActiveTrue(member))
+                .willReturn(Optional.empty());
+
+        // when
+        Optional<FCMToken> result = fcmTokenService.findActiveTokenByMember(member);
+
+        // then
+        assertThat(result).isEmpty();
+    }
+
+    @Test
     @DisplayName("활성화된 토큰이 없을 경우 예외를 발생시킨다")
     void getActiveTokenByMember_WithoutExistingToken_ShouldThrowException() {
         // given

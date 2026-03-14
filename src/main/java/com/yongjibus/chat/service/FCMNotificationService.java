@@ -22,9 +22,9 @@ public class FCMNotificationService {
             // 메시지 발신자 정보 추출
             String senderName = chatMessage.getSender();
 
-            FCMToken token = fcmTokenService.getActiveTokenByMember(member);
-
-            if (token == null) {
+            Optional<FCMToken> token = fcmTokenService.findActiveTokenByMember(member);
+            if (token.isEmpty()) {
+                log.debug("활성 FCM 토큰이 없어 알림을 건너뜁니다. memberId={}", member.getId());
                 return;
             }
 
@@ -44,7 +44,7 @@ public class FCMNotificationService {
                     .setBody(body)
                     .build())
                 .putAllData(data)
-                .setToken(token.getToken())
+                .setToken(token.get().getToken())
                 .build();
         try {
             // 메시지 전송

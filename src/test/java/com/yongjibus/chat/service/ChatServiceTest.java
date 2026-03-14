@@ -31,11 +31,13 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -201,6 +203,27 @@ class ChatServiceTest {
         // then
         verify(chatRepository, times(1)).save(any(ChatMessage.class));
         verify(fcmNotificationService, times(1)).sendChatNotification(any(), any(), any());
+        verify(messagingTemplate, times(1)).convertAndSend(anyString(), any(ChatMessage.class));
+    }
+
+    @Test
+    @DisplayName("FCM 전송에 실패해도 채팅 메시지 전송은 계속된다")
+    void processAndSendMessage_WhenNotificationFails_ShouldStillSendMessage() {
+        // given
+        testChatRoom.addMember(testMember);
+
+        when(chatRepository.save(any(ChatMessage.class))).thenReturn(testChatMessage);
+        when(chatRoomRepository.findById(anyLong())).thenReturn(Optional.of(testChatRoom));
+        when(websocketSessionManager.isSessionExists(anyString())).thenReturn(false);
+        doThrow(new RuntimeException("fcm failed"))
+            .when(fcmNotificationService)
+            .sendChatNotification(any(), any(), any());
+        doNothing().when(messagingTemplate).convertAndSend(anyString(), any(ChatMessage.class));
+
+        // when & then
+        assertThatCode(() -> chatService.processAndSendMessage(testChatMessage))
+            .doesNotThrowAnyException();
+        verify(chatRepository, times(1)).save(any(ChatMessage.class));
         verify(messagingTemplate, times(1)).convertAndSend(anyString(), any(ChatMessage.class));
     }
     

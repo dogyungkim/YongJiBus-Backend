@@ -43,9 +43,14 @@ public class FCMTokenService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<FCMToken> findActiveTokenByMember(Member member) {
+        return fcmTokenRepository.findByMemberAndIsActiveTrue(member);
+    }
+
+    @Transactional(readOnly = true)
     public FCMToken getActiveTokenByMember(Member member) {
-        Optional<FCMToken> fcmToken = fcmTokenRepository.findByMemberAndIsActiveTrue(member);
-        if(!fcmToken.isPresent()){
+        Optional<FCMToken> fcmToken = findActiveTokenByMember(member);
+        if (fcmToken.isEmpty()) {
             throw new ChatException(ErrorCode.FCM_TOKEN_NOT_FOUND);
         }
 

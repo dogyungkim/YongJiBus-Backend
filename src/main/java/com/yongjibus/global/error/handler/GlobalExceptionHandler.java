@@ -10,6 +10,7 @@ import com.yongjibus.global.error.code.ErrorCode;
 import com.yongjibus.global.error.exception.AuthException;
 import com.yongjibus.global.error.exception.ChatException;
 import com.yongjibus.global.error.exception.DateInfoNotFoundException;
+import com.yongjibus.global.error.exception.MemberException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,5 +45,10 @@ public class GlobalExceptionHandler {
         log.error("ChatException: {}", e.getMessage());
         return YongJiResponse.error(e.getErrorCode().getStatus().value(), e.getMessage());
     }
-}
 
+    @ExceptionHandler(MemberException.class)
+    public ResponseEntity<YongJiResponse<String>> handleMemberException(MemberException e) {
+        log.error("MemberException: {}", e.getMessage());
+        return YongJiResponse.error(e.getErrorCode().getStatus().value(), e.getMessage());
+    }
+}

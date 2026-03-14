@@ -40,6 +40,8 @@ public class VacationService {
      */
     public boolean isVacation(LocalDate date) {
         VacationPeriod vacationPeriod = vacationPeriodRepository.findByStartDateLessThanEqualAndEndDateGreaterThanEqual(date,date);
-        return vacationPeriod != null && date.isAfter(vacationPeriod.getStartDate()) && date.isBefore(vacationPeriod.getEndDate());
+        return vacationPeriod != null
+            && !date.isBefore(vacationPeriod.getStartDate())
+            && !date.isAfter(vacationPeriod.getEndDate());
     }
 } 

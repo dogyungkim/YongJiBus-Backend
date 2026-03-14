@@ -171,7 +171,11 @@ public class ChatService {
             if (!websocketSessionManager.isSessionExists(member.getEmail())) {
                 // 일반 채팅 메시지인 경우에만 알림 전송 (입장/퇴장 메시지는 알림 제외)
                 if (message.getMessageType() == ChatMessage.MessageType.MESSAGE) {
-                    fcmNotificationService.sendChatNotification(message, member, chatRoom);
+                    try {
+                        fcmNotificationService.sendChatNotification(message, member, chatRoom);
+                    } catch (Exception e) {
+                        log.warn("FCM 알림 전송 실패로 푸시를 건너뜁니다. roomId={}, memberId={}", message.getRoomId(), member.getId(), e);
+                    }
                 }
             }
         }

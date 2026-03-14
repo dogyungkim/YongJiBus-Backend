@@ -18,7 +18,7 @@ public class YongJiResponse<T> {
 
     // 실패 응답
     public static ResponseEntity<YongJiResponse<String>> error(int code, String message) {
-        return ResponseEntity.badRequest()
+        return ResponseEntity.status(code)
                 .body(new YongJiResponse<>(code, message));
     }
 }

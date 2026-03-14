@@ -4,6 +4,8 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
+import com.yongjibus.global.error.code.ErrorCode;
+import com.yongjibus.global.error.exception.MemberException;
 import com.yongjibus.global.infra.email.EmailService;
 import com.yongjibus.member.domain.Member;
 import com.yongjibus.member.domain.MemberReport;
@@ -24,7 +26,7 @@ public class ReportService {
     Optional<Member> reportedMember = memberRepository.findByUsername(reportedUsername);
 
     if (reportedMember.isEmpty()) {
-      throw new RuntimeException("신고 대상 멤버가 존재하지 않습니다.");
+      throw new MemberException(ErrorCode.REPORT_TARGET_NOT_FOUND);
     }
 
     memberReport.setReportedMember(reportedMember.get());
