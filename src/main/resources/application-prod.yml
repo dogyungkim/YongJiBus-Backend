@@ -58,3 +58,12 @@ jwt:
   secret: ${JWT_SECRET}
   access-token-validity: 36000000    # 10시간 (10 * 60 * 60 * 1000 밀리초)
   refresh-token-validity: 604800000  # 7일 (7 * 24 * 60 * 60 * 1000 밀리초)
+
+gmail:
+  enabled: ${GMAIL_API_ENABLED:false}
+  topic-name: ${GMAIL_TOPIC_NAME:projects/yongji-bus/topics/auth-mail-failure}
+  watched-label-id: ${GMAIL_WATCH_LABEL_ID:Label_6}
+  oauth:
+    client-id: ${GMAIL_OAUTH_CLIENT_ID:}
+    client-secret: ${GMAIL_OAUTH_CLIENT_SECRET:}
+    refresh-token: ${GMAIL_OAUTH_REFRESH_TOKEN:}

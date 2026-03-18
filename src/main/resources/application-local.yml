@@ -12,9 +12,9 @@ spring:
   #   password:
   #   driver-class-name: org.h2.Driver
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}
-    username: ${MYSQL_USERNAME}
-    password: ${MYSQL_PASSWORD}
+    url: jdbc:mysql://127.0.0.1:6033/yongji
+    username: admin
+    password: dacwad-gazXy5-kupdib
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
@@ -25,23 +25,21 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.MySQL8Dialect
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    host: 127.0.0.1
+    port: 1025
     properties:
       mail:
         smtp:
-          auth: true
+          auth: false
           starttls:
-            enable: true
-            required: true
+            enable: false
+            required: false
           connection-timeout: 5000
           timeout: 5000
           write-timeout: 5000
     auth-code-expiration-minutes: 10
     report:
-      to: ${REPORT_TO}
+      to: local-report@yongjibus.dev
       
 secrets:
   open_api_key: ${OPEN_API_KEY}
@@ -58,3 +56,6 @@ jwt:
   secret: ${JWT_SECRET}
   access-token-validity: 36000000    # 10시간 (10 * 60 * 60 * 1000 밀리초)
   refresh-token-validity: 604800000  # 7일 (7 * 24 * 60 * 60 * 1000 밀리초)
+
+gmail:
+  enabled: false

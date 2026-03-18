@@ -1,71 +1,50 @@
 package com.yongjibus.global.infra.gmail;
 
-import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.io.IOException;
 import java.util.List;
+import java.security.GeneralSecurityException;
 
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
-import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
-import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
-import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.gmail.Gmail;
-import com.google.api.services.gmail.GmailScopes;
 import com.google.api.services.gmail.model.ListHistoryResponse;
 import com.google.api.services.gmail.model.ListLabelsResponse;
 import com.google.api.services.gmail.model.Message;
 import com.google.api.services.gmail.model.WatchResponse;
+import com.google.api.services.gmail.model.WatchRequest;
 
 import lombok.extern.slf4j.Slf4j;
-
-import com.google.api.services.gmail.model.WatchRequest;
 
 @Service
 @Slf4j
 public class GmailApiService {
-    private static final String CREDENTIALS_FILE_PATH = "/credentials.json";
-    private static final String TOKENS_DIRECTORY_PATH = "tokens";
-    private static final String TOPIC_NAME = "projects/yongji-bus/topics/auth-mail-failure";
     private static final String USER_ID = "me";
+    private static final String APPLICATION_NAME = "YongJiBus";
 
-    private final Gmail gmailService;
-    
-    public GmailApiService() throws Exception {
-        var httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-        var jsonFactory = GsonFactory.getDefaultInstance();
+    private final GmailProperties gmailProperties;
+    private volatile Gmail gmailService;
 
-        var clientSecrets = GoogleClientSecrets.load(
-                jsonFactory,
-                new InputStreamReader(GmailApiService.class.getResourceAsStream(CREDENTIALS_FILE_PATH))
-        );
+    public GmailApiService(GmailProperties gmailProperties) {
+        this.gmailProperties = gmailProperties;
+    }
 
-        var flow = new GoogleAuthorizationCodeFlow.Builder(
-                httpTransport,
-                jsonFactory,
-                clientSecrets,
-                List.of(GmailScopes.GMAIL_READONLY, GmailScopes.GMAIL_MODIFY)
-        ).setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
-         .setAccessType("offline")
-         .setApprovalPrompt("force")
-         .build();
-
-        var receiver = new LocalServerReceiver.Builder().setPort(8888).build();
-        var credential = new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
-
-        this.gmailService = new Gmail.Builder(httpTransport, jsonFactory, credential).build();
-        this.watchBounceMailBox();
+    public boolean isConfigured() {
+        return gmailProperties.isEnabled()
+                && StringUtils.hasText(gmailProperties.getOauth().getClientId())
+                && StringUtils.hasText(gmailProperties.getOauth().getClientSecret())
+                && StringUtils.hasText(gmailProperties.getOauth().getRefreshToken());
     }
 
     /**
      * History ID를 사용하여 메시지 추가 내역을 가져옵니다.
      */
     public ListHistoryResponse getHistory(BigInteger startHistoryId) throws IOException {
-        ListHistoryResponse history = gmailService.users().history()
+        ListHistoryResponse history = getGmailService().users().history()
                 .list(USER_ID)
                 .setStartHistoryId(startHistoryId)
                 .setHistoryTypes(List.of("messageAdded"))
@@ -77,7 +56,7 @@ public class GmailApiService {
      * 메시지 ID를 사용하여 메시지를 가져옵니다.
      */
     public Message getMessage(String messageId) throws IOException {
-        Message message = gmailService.users().messages()
+        Message message = getGmailService().users().messages()
                 .get(USER_ID, messageId)
                 .setFormat("metadata")
                 .execute();
@@ -89,21 +68,71 @@ public class GmailApiService {
      * 바운스 메일 감지를 위해 Gmail API의 watch 기능을 사용합니다.
      */
     public void watchBounceMailBox() throws IOException {
-        WatchRequest watchRequest = new WatchRequest()
-            .setLabelIds(List.of("Label_6"))
-            .setLabelFilterAction("include")
-            .setTopicName(TOPIC_NAME);
+        if (!isConfigured()) {
+            log.info("Skipping Gmail watch registration because Gmail OAuth settings are disabled or incomplete");
+            return;
+        }
 
-       WatchResponse watchResponse = gmailService.users().watch(USER_ID, watchRequest).execute();
-       log.debug("Watch Response: {}", watchResponse);
+        WatchRequest watchRequest = new WatchRequest()
+            .setLabelIds(List.of(gmailProperties.getWatchedLabelId()))
+            .setLabelFilterAction("include")
+            .setTopicName(gmailProperties.getTopicName());
+
+       WatchResponse watchResponse = getGmailService().users().watch(USER_ID, watchRequest).execute();
+       log.info("Registered Gmail watch with historyId={} expiration={}",
+               watchResponse.getHistoryId(), watchResponse.getExpiration());
     }
 
     /**
      * 사용자가 만든 Gmail Label을 확인합니다.
      */
     public void listLabels() throws IOException {
-        ListLabelsResponse listLabelsResponse = gmailService.users().labels().list(USER_ID).execute();
+        ListLabelsResponse listLabelsResponse = getGmailService().users().labels().list(USER_ID).execute();
         log.info("List Labels Response: {}", listLabelsResponse);
+    }
+
+    private Gmail getGmailService() throws IOException {
+        if (!isConfigured()) {
+            throw new IllegalStateException("Gmail API is not configured");
+        }
+
+        Gmail existingService = gmailService;
+        if (existingService != null) {
+            return existingService;
+        }
+
+        synchronized (this) {
+            if (gmailService == null) {
+                gmailService = buildGmailService();
+            }
+            return gmailService;
+        }
+    }
+
+    private Gmail buildGmailService() throws IOException {
+        try {
+            var httpTransport = GoogleNetHttpTransport.newTrustedTransport();
+            var jsonFactory = GsonFactory.getDefaultInstance();
+
+            GoogleCredential credential = new GoogleCredential.Builder()
+                    .setTransport(httpTransport)
+                    .setJsonFactory(jsonFactory)
+                    .setClientSecrets(
+                            gmailProperties.getOauth().getClientId(),
+                            gmailProperties.getOauth().getClientSecret())
+                    .build()
+                    .setRefreshToken(gmailProperties.getOauth().getRefreshToken());
+
+            if (!credential.refreshToken()) {
+                throw new IOException("Failed to refresh Gmail access token");
+            }
+
+            return new Gmail.Builder(httpTransport, jsonFactory, credential)
+                    .setApplicationName(APPLICATION_NAME)
+                    .build();
+        } catch (GeneralSecurityException e) {
+            throw new IOException("Failed to initialize Gmail API client", e);
+        }
     }
     
 }   

@@ -1,0 +1,56 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: yongjibus-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: yongji
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: dacwad-gazXy5-kupdib
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_HOST: "%"
+      TZ: Asia/Seoul
+    ports:
+      - "6033:3306"
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  mysql-init:
+    image: mysql:8.0
+    container_name: yongjibus-mysql-init
+    restart: "no"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    entrypoint:
+      - sh
+      - -c
+      - |
+        mysql -h mysql -uroot -proot <<'SQL'
+        CREATE DATABASE IF NOT EXISTS yongji CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        CREATE USER IF NOT EXISTS 'admin'@'%' IDENTIFIED BY 'dacwad-gazXy5-kupdib';
+        ALTER USER 'admin'@'%' IDENTIFIED BY 'dacwad-gazXy5-kupdib';
+        GRANT ALL PRIVILEGES ON yongji.* TO 'admin'@'%';
+        FLUSH PRIVILEGES;
+        SQL
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: yongjibus-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  mysql-data:
