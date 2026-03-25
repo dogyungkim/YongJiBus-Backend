@@ -2,6 +2,7 @@ package com.yongjibus.member.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import com.yongjibus.global.error.code.ErrorCode;
 import com.yongjibus.global.error.exception.AuthException;
@@ -19,7 +20,17 @@ public class MemberService {
 
     @Transactional
     public void saveMember(Member member) {
-        memberRepository.save(member);
+        try {
+            memberRepository.saveAndFlush(member);
+        } catch (DataIntegrityViolationException e) {
+            if (memberRepository.existsByEmail(member.getEmail())) {
+                throw new AuthException(ErrorCode.EMAIL_ALREADY_EXISTS);
+            }
+            if (memberRepository.existsByUsername(member.getUsername())) {
+                throw new AuthException(ErrorCode.USERNAME_ALREADY_EXISTS);
+            }
+            throw e;
+        }
     }
 
     public Member getMemberByEmail(String email) {

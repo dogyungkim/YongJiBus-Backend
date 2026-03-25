@@ -10,15 +10,17 @@ import com.yongjibus.daytype.client.HolidayApiClient;
 import com.yongjibus.daytype.controller.dto.HolidayInfoExternalResponseDTO;
 import com.yongjibus.vacation.service.VacationService;
 
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -28,42 +30,58 @@ public class DayTypeService {
     private final HolidayApiClient holidayApiClient;
     private final DayTypeRepository dayTypeRepository;
     private final VacationService vacationService;
+    private final CacheManager cacheManager;
 
-    @PostConstruct
-    private void init(){
-        // 국가 데이터 센터 화재로 인한 공휴일 정보 저장 오류 발생으로 인해 일단 주석처리
-        //loadHolidayInfo();
+    @EventListener(ApplicationReadyEvent.class)
+    public void refreshCurrentMonthDayInfoOnStartup() {
+        try {
+            refreshCurrentMonthDayInfo();
+        } catch (RuntimeException e) {
+            log.warn("애플리케이션 시작 시 날짜 정보를 새로고침하지 못했습니다. 기본 주말/평일 데이터로 계속 진행합니다.", e);
+        }
     }
 
     /**
      * 해당 날짜가 공휴일인지 확인하는 메서드
+     * 
      * @param date 확인할 날짜
      * @return DateInfo 날짜 정보
      */
     @Cacheable(value = "dayInfo")
     public DateInfo findDayInfo(LocalDate date) {
-        if(vacationService.isVacation(date)) {
+        if (vacationService.isVacation(date)) {
             return DateInfo.builder()
-                .date(date)
-                .isHoliday(true)
-                .dateKind("방학")
-                .build();
+                    .date(date)
+                    .isHoliday(true)
+                    .dateKind("방학")
+                    .build();
         }
         return dayTypeRepository.findByDate(date);
     }
 
     /**
+     * 현재 달의 날짜 정보를 새로고침하는 메서드
+     */
+    public void refreshCurrentMonthDayInfo() {
+        dayTypeRepository.setDateData();
+        evictDayInfoCache();
+        loadHolidayInfo();
+    }
+
+    /**
      * 메모리에 공휴일 정보 저장 하는 메서드
      */
-    public void loadHolidayInfo(){
-        
+    public void loadHolidayInfo() {
+
         String response = fetchHolidayInfoFromAPI();
-        
+
         try {
             HolidayInfoExternalResponseDTO dto = parseHolidayXmlResponse(response);
             dayTypeRepository.setHolidayData(dto.toEntity());
+            evictDayInfoCache();
 
-            //dayTypeRepository.setHolidayData(List.of(new DateInfo(LocalDate.of(2025, 1, 1), true, "신정")));
+            // dayTypeRepository.setHolidayData(List.of(new DateInfo(LocalDate.of(2025, 1,
+            // 1), true, "신정")));
         } catch (Exception e) {
             throw new RuntimeException("Failed to get holiday data", e);
         }
@@ -71,6 +89,7 @@ public class DayTypeService {
 
     /**
      * 공공데이터 API를 통해 공휴일 정보를 가져오는 메서드
+     * 
      * @return String 공휴일 데이터
      */
     private String fetchHolidayInfoFromAPI() {
@@ -80,13 +99,25 @@ public class DayTypeService {
 
     /**
      * XML 형식의 공휴일 데이터를 파싱하는 메서드
+     * 
      * @param response API로부터 받은 XML 형식의 응답 데이터
      * @return HolidayInfoExternalResponseDTO 파싱된 공휴일 정보 DTO
-     * @throws JsonMappingException XML 매핑 실패시 발생
+     * @throws JsonMappingException    XML 매핑 실패시 발생
      * @throws JsonProcessingException JSON 처리 실패시 발생
      */
-    private HolidayInfoExternalResponseDTO parseHolidayXmlResponse(String response) throws JsonMappingException, JsonProcessingException{
+    private HolidayInfoExternalResponseDTO parseHolidayXmlResponse(String response)
+            throws JsonMappingException, JsonProcessingException {
         XmlMapper xmlMapper = new XmlMapper();
         return xmlMapper.readValue(response, HolidayInfoExternalResponseDTO.class);
+    }
+
+    /**
+     * dayInfo 캐시를 비우는 메서드
+     */
+    private void evictDayInfoCache() {
+        Cache dayInfoCache = cacheManager.getCache("dayInfo");
+        if (dayInfoCache != null) {
+            dayInfoCache.clear();
+        }
     }
 }

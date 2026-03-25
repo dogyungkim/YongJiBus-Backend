@@ -1,6 +1,7 @@
 package com.yongjibus.auth.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Optional;
 
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import com.yongjibus.member.domain.Member;
 import com.yongjibus.member.repository.MemberRepository;
@@ -149,4 +151,28 @@ class MemberRepositoryTest {
         // then
         assertThat(exists).isFalse();
     }
-} 
+
+    @Test
+    @DisplayName("동일한 이메일로 회원을 중복 저장할 수 없다")
+    void duplicateEmailShouldFail() {
+        // given
+        Member firstMember = Member.builder()
+                .email(TEST_EMAIL)
+                .password(TEST_PASSWORD)
+                .username(TEST_USERNAME)
+                .name(TEST_NAME)
+                .build();
+        Member secondMember = Member.builder()
+                .email(TEST_EMAIL)
+                .password(TEST_PASSWORD)
+                .username("anotheruser")
+                .name(TEST_NAME)
+                .build();
+
+        memberRepository.saveAndFlush(firstMember);
+
+        // when & then
+        assertThatThrownBy(() -> memberRepository.saveAndFlush(secondMember))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+}

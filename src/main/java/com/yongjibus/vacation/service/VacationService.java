@@ -6,6 +6,8 @@ import com.yongjibus.vacation.repository.VacationPeriodRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -16,6 +18,7 @@ import java.time.LocalDate;
 public class VacationService {
     
     private final VacationPeriodRepository vacationPeriodRepository;
+    private final CacheManager cacheManager;
 
     /**
      * 방학 기간을 저장하는 메서드
@@ -23,6 +26,7 @@ public class VacationService {
      */
     public void saveVacationPeriod(VacationPeriod vacationPeriod) {
         vacationPeriodRepository.save(vacationPeriod);
+        evictDayInfoCache();
     }
 
     /**
@@ -43,5 +47,12 @@ public class VacationService {
         return vacationPeriod != null
             && !date.isBefore(vacationPeriod.getStartDate())
             && !date.isAfter(vacationPeriod.getEndDate());
+    }
+
+    private void evictDayInfoCache() {
+        Cache dayInfoCache = cacheManager.getCache("dayInfo");
+        if (dayInfoCache != null) {
+            dayInfoCache.clear();
+        }
     }
 } 

@@ -19,7 +19,7 @@ CREATE TABLE member (
     name VARCHAR(10) NOT NULL COMMENT '실제 이름',
     username VARCHAR(10) NOT NULL UNIQUE COMMENT '닉네임',
     password VARCHAR(255) NOT NULL COMMENT '암호화된 비밀번호',
-    email VARCHAR(20) NOT NULL COMMENT '이메일',
+    email VARCHAR(20) NOT NULL UNIQUE COMMENT '이메일',
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE COMMENT '삭제 여부',
     created_at DATETIME(6) COMMENT '생성일시',
     updated_at DATETIME(6) COMMENT '수정일시'

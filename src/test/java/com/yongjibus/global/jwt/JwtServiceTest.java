@@ -56,6 +56,16 @@ class JwtServiceTest {
     }
 
     @Test
+    @DisplayName("리프레시 토큰은 액세스 토큰 검증을 통과하면 안 된다")
+    void validateAccessTokenShouldRejectRefreshToken() {
+        // given
+        String refreshToken = jwtService.createAndSaveRefreshToken(TEST_EMAIL);
+
+        // when & then
+        assertThat(jwtService.validateAccessToken(refreshToken)).isFalse();
+    }
+
+    @Test
     @DisplayName("리프레시 토큰 생성 및 저장 테스트")
     void createAndSaveRefreshTokenTest() {
         // when

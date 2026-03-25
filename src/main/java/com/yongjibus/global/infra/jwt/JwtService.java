@@ -15,7 +15,6 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import io.jsonwebtoken.ExpiredJwtException;
 
 @RequiredArgsConstructor
 @Service
@@ -88,7 +87,7 @@ public class JwtService {
      * @return 토큰 유효성 여부
      */
     public boolean validateRefreshToken(String refreshToken) {
-        if (!validateToken(refreshToken)) {
+        if (!validateToken(refreshToken, REFRESH_TOKEN_SUBJECT)) {
             return false;
         }
 
@@ -98,13 +97,19 @@ public class JwtService {
     }
 
     public boolean validateAccessToken(String accessToken) {
-        return !isTokenExpired(accessToken);
+        return validateToken(accessToken, ACCESS_TOKEN_SUBJECT);
     }
 
-    private boolean validateToken(String token) {
+    private boolean validateToken(String token, String expectedSubject) {
         try {
-            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
-            return !isTokenExpired(token);
+            var claims = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+
+            return expectedSubject.equals(claims.getSubject())
+                    && !claims.getExpiration().before(new Date());
         } catch (JwtException e) {
             return false;
         }
@@ -123,30 +128,6 @@ public class JwtService {
 
     public void deleteRefreshToken(String email) {
         jwtRepository.deleteRefreshToken(email);
-    }
-
-    /**
-     * 토큰이 만료되었는지 확인합니다.
-     * 
-     * @param token 검사할 JWT 토큰
-     * @return 토큰이 만료되었으면 true, 아직 유효하면 false, 토큰이 유효하지 않으면 true
-     */
-    private boolean isTokenExpired(String token) {
-        try {
-            Date expiration = Jwts
-                .parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getExpiration();
-            
-            return expiration.before(new Date());
-        } catch (ExpiredJwtException e) {
-            return true;
-        } catch (JwtException | IllegalArgumentException e) {
-            return true;
-        }
     }
 
     public String getEmailFromToken(String token) {

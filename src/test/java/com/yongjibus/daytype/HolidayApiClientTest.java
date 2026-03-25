@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.client.RestClientTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
@@ -14,6 +15,8 @@ import com.yongjibus.daytype.client.HolidayApiClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 
 import org.junit.jupiter.api.DisplayName;
@@ -53,8 +56,14 @@ class HolidayApiClientTest {
             </response>
             """;
 
-        String expectedUrl = String.format(
-            "http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?solYear=2024&solMonth=01&serviceKey=" + openApiKey);
+        String encodedOpenApiKey = URLEncoder.encode(openApiKey, StandardCharsets.UTF_8);
+        String expectedUrl = UriComponentsBuilder
+            .fromHttpUrl("http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo")
+            .queryParam("solYear", "2024")
+            .queryParam("solMonth", "01")
+            .queryParam("serviceKey", encodedOpenApiKey)
+            .build()
+            .toUriString();
         server.expect(requestTo(expectedUrl))
             .andRespond(withSuccess(sampleXmlResponse, MediaType.APPLICATION_XML));
 
