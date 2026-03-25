@@ -1,15 +1,14 @@
 package com.yongjibus.chat.service;
 
-import java.time.LocalTime;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.time.LocalTime;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,7 +19,6 @@ import com.yongjibus.chat.repository.ChatRoomRepository;
 import com.yongjibus.chat.repository.ChatRoomMemberRepository;
 import com.yongjibus.global.error.code.ErrorCode;
 import com.yongjibus.global.error.exception.ChatException;
-import com.yongjibus.global.infra.websocket.WebsocketSessionManager;
 import com.yongjibus.member.domain.Member;
 
 import lombok.RequiredArgsConstructor;
@@ -34,10 +32,7 @@ public class ChatService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatRepository chatRepository;
     private final ChatRoomMemberRepository chatRoomMemberRepository;
-
-    private final SimpMessagingTemplate messagingTemplate;
-    private final WebsocketSessionManager websocketSessionManager;
-    private final FCMNotificationService fcmNotificationService;
+    private final ChatMessageDeliveryPublisher chatMessageDeliveryPublisher;
 
     @Transactional(readOnly = true)
     public List<ChatRoom> getAllChatRooms() {
@@ -73,9 +68,8 @@ public class ChatService {
                 .createdAt(LocalDateTime.now())
                 .build();
         
-        // 메시지 저장 및 전송
-        chatRepository.save(warningMessage);
-        messagingTemplate.convertAndSend("/sub/chat/room/" + chatRoom.getId(), warningMessage);
+        saveMessage(warningMessage);
+        chatMessageDeliveryPublisher.publishAfterCommit(warningMessage, chatRoom);
         
         return chatRoomRepository.save(chatRoom);
     }
@@ -165,31 +159,8 @@ public class ChatService {
 
     @Transactional
     public void processAndSendMessage(ChatMessage message) {
-        // 메시지 저장
-        try{
-            chatRepository.save(message);
-        } catch (Exception e) {
-            log.error("메시지 저장 중 오류 발생: {}", e.getMessage());
-            throw new ChatException(ErrorCode.CHAT_MESSAGE_SAVE_ERROR);
-        }
-
-        ChatRoom chatRoom = chatRoomRepository.findById(message.getRoomId())
-            .orElseThrow(() -> new ChatException(ErrorCode.CHAT_ROOM_NOT_FOUND));
-        
-        List<Member> members = chatRoom.getMembers();
-        for (Member member : members) {
-            if (!websocketSessionManager.isSessionExists(member.getEmail())) {
-                // 일반 채팅 메시지인 경우에만 알림 전송 (입장/퇴장 메시지는 알림 제외)
-                if (message.getMessageType() == ChatMessage.MessageType.MESSAGE) {
-                    try {
-                        fcmNotificationService.sendChatNotification(message, member, chatRoom);
-                    } catch (Exception e) {
-                        log.warn("FCM 알림 전송 실패로 푸시를 건너뜁니다. roomId={}, memberId={}", message.getRoomId(), member.getId(), e);
-                    }
-                }
-            }
-        }
-        messagingTemplate.convertAndSend("/sub/chat/room/" + message.getRoomId(), message);
+        saveMessage(message);
+        chatMessageDeliveryPublisher.publishAfterCommit(message, message.getRoomId());
     }
 
     @Transactional(readOnly = true)
@@ -224,6 +195,15 @@ public class ChatService {
 
         if (!isActiveMember) {
             throw new ChatException(ErrorCode.CHAT_ROOM_FORBIDDEN);
+        }
+    }
+
+    private void saveMessage(ChatMessage message) {
+        try{
+            chatRepository.save(message);
+        } catch (Exception e) {
+            log.error("메시지 저장 중 오류 발생: {}", e.getMessage());
+            throw new ChatException(ErrorCode.CHAT_MESSAGE_SAVE_ERROR);
         }
     }
 }

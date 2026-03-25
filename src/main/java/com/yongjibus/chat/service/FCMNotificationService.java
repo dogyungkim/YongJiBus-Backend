@@ -17,7 +17,7 @@ public class FCMNotificationService {
 
     private final FCMTokenService fcmTokenService;
 
-    public void sendChatNotification(ChatMessage chatMessage, Member member, ChatRoom chatRoom) {
+    public void sendChatNotification(ChatMessage chatMessage, Member member, Long chatRoomId, String chatRoomName) {
  
             // 메시지 발신자 정보 추출
             String senderName = chatMessage.getSender();
@@ -29,12 +29,12 @@ public class FCMNotificationService {
             }
 
             // 알림 데이터 준비
-            String title = chatRoom.getName();
+            String title = chatRoomName;
             String body = senderName + ": " + chatMessage.getContent();
             Map<String, String> data = new HashMap<>();
 
             data.put("type", "chat");
-            data.put("chatRoomId", chatRoom.getId().toString());
+            data.put("chatRoomId", chatRoomId.toString());
             data.put("messageId", chatMessage.getId().toString());
             data.put("senderName", senderName);
 
