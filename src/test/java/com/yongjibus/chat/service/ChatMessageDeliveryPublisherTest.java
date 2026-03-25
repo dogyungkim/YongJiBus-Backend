@@ -77,7 +77,7 @@ class ChatMessageDeliveryPublisherTest {
         when(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom));
 
         // when
-        chatMessageDeliveryPublisher.publishAfterCommit(testChatMessage, 1L);
+        chatMessageDeliveryPublisher.publishAfterCommitByRoomId(testChatMessage, 1L);
 
         // then
         ArgumentCaptor<ChatMessageDeliveryEvent> captor = ArgumentCaptor.forClass(ChatMessageDeliveryEvent.class);
@@ -94,7 +94,7 @@ class ChatMessageDeliveryPublisherTest {
     @DisplayName("채팅방 엔티티가 있으면 추가 조회 없이 배달 이벤트를 발행한다")
     void publishAfterCommit_WithChatRoom_ShouldPublishWithoutLookup() {
         // when
-        chatMessageDeliveryPublisher.publishAfterCommit(testChatMessage, testChatRoom);
+        chatMessageDeliveryPublisher.publishAfterCommitWithRoom(testChatMessage, testChatRoom);
 
         // then
         verifyNoInteractions(chatRoomRepository);
@@ -113,7 +113,7 @@ class ChatMessageDeliveryPublisherTest {
         when(chatRoomRepository.findById(1L)).thenReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> chatMessageDeliveryPublisher.publishAfterCommit(testChatMessage, 1L))
+        assertThatThrownBy(() -> chatMessageDeliveryPublisher.publishAfterCommitByRoomId(testChatMessage, 1L))
             .isInstanceOf(ChatException.class)
             .hasFieldOrPropertyWithValue("errorCode", ErrorCode.CHAT_ROOM_NOT_FOUND);
         verifyNoInteractions(applicationEventPublisher);

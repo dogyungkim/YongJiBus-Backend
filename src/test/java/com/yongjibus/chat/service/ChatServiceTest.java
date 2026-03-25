@@ -131,7 +131,7 @@ class ChatServiceTest {
             message.getMessageType() == ChatMessage.MessageType.SYSTEM
                 && Long.valueOf(1L).equals(message.getRoomId())
         ));
-        verify(chatMessageDeliveryPublisher).publishAfterCommit(
+        verify(chatMessageDeliveryPublisher).publishAfterCommitWithRoom(
             argThat(message -> message.getMessageType() == ChatMessage.MessageType.SYSTEM),
             any(ChatRoom.class)
         );
@@ -155,7 +155,7 @@ class ChatServiceTest {
             message.getMessageType() == ChatMessage.MessageType.ENTER
                 && message.getContent().contains(testMember.getUsername())
         ));
-        verify(chatMessageDeliveryPublisher).publishAfterCommit(
+        verify(chatMessageDeliveryPublisher).publishAfterCommitByRoomId(
             argThat(message -> message.getMessageType() == ChatMessage.MessageType.ENTER),
             eq(1L)
         );
@@ -197,7 +197,7 @@ class ChatServiceTest {
         // then
         InOrder inOrder = inOrder(chatRepository, chatMessageDeliveryPublisher);
         inOrder.verify(chatRepository).save(testChatMessage);
-        inOrder.verify(chatMessageDeliveryPublisher).publishAfterCommit(testChatMessage, 1L);
+        inOrder.verify(chatMessageDeliveryPublisher).publishAfterCommitByRoomId(testChatMessage, 1L);
     }
 
     @Test
@@ -233,7 +233,7 @@ class ChatServiceTest {
                 && testMember.getUsername().equals(message.getSender())
                 && Long.valueOf(1L).equals(message.getRoomId())
         ));
-        verify(chatMessageDeliveryPublisher).publishAfterCommit(
+        verify(chatMessageDeliveryPublisher).publishAfterCommitByRoomId(
             argThat(message ->
                 message.getMessageType() == ChatMessage.MessageType.MESSAGE
                     && testMember.getUsername().equals(message.getSender())

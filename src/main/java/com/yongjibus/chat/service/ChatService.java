@@ -69,7 +69,7 @@ public class ChatService {
                 .build();
         
         saveMessage(warningMessage);
-        chatMessageDeliveryPublisher.publishAfterCommit(warningMessage, chatRoom);
+        chatMessageDeliveryPublisher.publishAfterCommitWithRoom(warningMessage, chatRoom);
         
         return chatRoomRepository.save(chatRoom);
     }
@@ -160,7 +160,7 @@ public class ChatService {
     @Transactional
     public void processAndSendMessage(ChatMessage message) {
         saveMessage(message);
-        chatMessageDeliveryPublisher.publishAfterCommit(message, message.getRoomId());
+        chatMessageDeliveryPublisher.publishAfterCommitByRoomId(message, message.getRoomId());
     }
 
     @Transactional(readOnly = true)
