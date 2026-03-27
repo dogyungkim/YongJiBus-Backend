@@ -10,6 +10,9 @@ import java.util.Optional;
 
 @Repository
 public interface FCMTokenRepository extends JpaRepository<FCMToken, Long> {
+    Optional<FCMToken> findByMember(Member member);
+
     Optional<FCMToken> findByMemberAndIsActiveTrue(Member member);
+
     Optional<FCMToken> findByTokenAndIsActiveTrue(String token);
-} 
+}

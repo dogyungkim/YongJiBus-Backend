@@ -59,7 +59,7 @@ class FCMTokenServiceTest {
                 .token("old-fcm-token")
                 .build();
         
-        given(fcmTokenRepository.findByMemberAndIsActiveTrue(member))
+        given(fcmTokenRepository.findByMember(member))
                 .willReturn(Optional.of(existingToken));
         given(fcmTokenRepository.save(any(FCMToken.class)))
                 .willReturn(existingToken);
@@ -68,9 +68,10 @@ class FCMTokenServiceTest {
         fcmTokenService.saveToken(member, newToken);
 
         // then
-        verify(fcmTokenRepository, times(1)).findByMemberAndIsActiveTrue(member);
+        verify(fcmTokenRepository, times(1)).findByMember(member);
         verify(fcmTokenRepository, times(1)).save(existingToken);
         assertThat(existingToken.getToken()).isEqualTo(newToken);
+        assertThat(existingToken.isActive()).isTrue();
     }
 
     @Test
@@ -79,15 +80,39 @@ class FCMTokenServiceTest {
         // given
         String token = "new-fcm-token";
         
-        given(fcmTokenRepository.findByMemberAndIsActiveTrue(member))
+        given(fcmTokenRepository.findByMember(member))
                 .willReturn(Optional.empty());
 
         // when
         fcmTokenService.saveToken(member, token);
 
         // then
-        verify(fcmTokenRepository, times(1)).findByMemberAndIsActiveTrue(member);
+        verify(fcmTokenRepository, times(1)).findByMember(member);
         verify(fcmTokenRepository, times(1)).save(any(FCMToken.class));
+    }
+
+    @Test
+    @DisplayName("비활성화된 동일 토큰이 있으면 새로 생성하지 않고 재활성화한다")
+    void saveToken_WithInactiveSameToken_ShouldReactivateToken() {
+        // given
+        String token = "same-fcm-token";
+
+        FCMToken existingToken = FCMToken.builder()
+                .member(member)
+                .token(token)
+                .build();
+        existingToken.deactivate();
+
+        given(fcmTokenRepository.findByMember(member))
+                .willReturn(Optional.of(existingToken));
+
+        // when
+        fcmTokenService.saveToken(member, token);
+
+        // then
+        verify(fcmTokenRepository, times(1)).findByMember(member);
+        verify(fcmTokenRepository, times(1)).save(existingToken);
+        assertThat(existingToken.isActive()).isTrue();
     }
 
     @Test

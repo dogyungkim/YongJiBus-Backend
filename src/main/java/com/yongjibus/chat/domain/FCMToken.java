@@ -25,7 +25,7 @@ public class FCMToken {
     private String token;
     
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
+    @JoinColumn(name = "member_id", nullable = false, unique = true)
     private Member member;
     
     @Column(name = "is_active")
@@ -43,6 +43,11 @@ public class FCMToken {
     
     public void deactivate() {
         this.isActive = false;
+        this.lastUpdatedAt = LocalDateTime.now();
+    }
+
+    public void reactivate() {
+        this.isActive = true;
         this.lastUpdatedAt = LocalDateTime.now();
     }
     

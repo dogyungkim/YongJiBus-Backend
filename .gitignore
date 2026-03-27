@@ -69,3 +69,5 @@ YongJiBus-Features.md
 TestDataInitializer.java
 
 deploy.env
+
+data/

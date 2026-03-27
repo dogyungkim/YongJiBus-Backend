@@ -31,6 +31,7 @@ import com.yongjibus.chat.domain.ChatRoomMember;
 import com.yongjibus.chat.repository.ChatRoomMemberRepository;
 import com.yongjibus.chat.repository.ChatRoomRepository;
 import com.yongjibus.global.error.code.ErrorCode;
+import com.yongjibus.global.error.exception.AuthException;
 import com.yongjibus.global.error.exception.StompException;
 import com.yongjibus.global.infra.jwt.JwtService;
 import com.yongjibus.member.domain.Member;
@@ -114,6 +115,25 @@ class StompPreHandlerTest {
     }
 
     @Test
+    @DisplayName("삭제된 회원은 STOMP 세션을 인증할 수 없다")
+    void preSend_WhenDeletedMemberConnects_ShouldThrowMemberDeleted() {
+        // given
+        Message<byte[]> message = buildMessage(StompCommand.CONNECT, accessor -> {
+            accessor.setNativeHeader("Authorization", "Bearer valid-token");
+            accessor.setSessionId("session-1");
+        });
+        when(jwtService.validateAccessToken("valid-token")).thenReturn(true);
+        when(jwtService.getEmailFromToken("valid-token")).thenReturn(member.getEmail());
+        when(memberDetailService.loadUserByUsername(member.getEmail()))
+                .thenThrow(new AuthException(ErrorCode.MEMBER_DELETED));
+
+        // when & then
+        assertThatThrownBy(() -> stompPreHandler.preSend(message, messageChannel))
+                .isInstanceOf(StompException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_DELETED);
+    }
+
+    @Test
     @DisplayName("채팅방 참여자는 해당 방을 구독할 수 있다")
     void preSend_WhenSubscribeByRoomMember_ShouldAllow() {
         // given
@@ -122,6 +142,7 @@ class StompPreHandlerTest {
             accessor.setUser(authentication);
         });
         when(chatRoomRepository.findById(1L)).thenReturn(Optional.of(chatRoom));
+        when(memberDetailService.loadUserByUsername(member.getEmail())).thenReturn(memberDetail);
         when(chatRoomMemberRepository.findByMemberAndChatRoomAndActiveTrue(member, chatRoom))
                 .thenReturn(Optional.of(ChatRoomMember.builder()
                         .member(member)
@@ -143,6 +164,7 @@ class StompPreHandlerTest {
             accessor.setUser(authentication);
         });
         when(chatRoomRepository.findById(1L)).thenReturn(Optional.of(chatRoom));
+        when(memberDetailService.loadUserByUsername(member.getEmail())).thenReturn(memberDetail);
         when(chatRoomMemberRepository.findByMemberAndChatRoomAndActiveTrue(member, chatRoom))
                 .thenReturn(Optional.empty());
 

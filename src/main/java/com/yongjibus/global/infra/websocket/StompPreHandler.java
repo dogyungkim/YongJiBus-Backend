@@ -21,6 +21,7 @@ import com.yongjibus.chat.domain.ChatRoom;
 import com.yongjibus.chat.repository.ChatRoomMemberRepository;
 import com.yongjibus.chat.repository.ChatRoomRepository;
 import com.yongjibus.global.error.code.ErrorCode;
+import com.yongjibus.global.error.exception.AuthException;
 import com.yongjibus.global.error.exception.StompException;
 import com.yongjibus.global.infra.jwt.JwtService;
 import org.springframework.stereotype.Component;
@@ -75,7 +76,7 @@ public class StompPreHandler implements ChannelInterceptor {
         }
 
         String email = jwtService.getEmailFromToken(token);
-        UserDetails userDetails = memberDetailService.loadUserByUsername(email);
+        UserDetails userDetails = loadActiveUserDetails(email);
         Authentication authentication = new UsernamePasswordAuthenticationToken(
             userDetails,
             null,
@@ -117,7 +118,7 @@ public class StompPreHandler implements ChannelInterceptor {
                 || !(authentication.getPrincipal() instanceof MemberDetail memberDetail)) {
             throw new StompException(ErrorCode.UNAUTHORIZED);
         }
-        return memberDetail;
+        return (MemberDetail) loadActiveUserDetails(memberDetail.getMember().getEmail());
     }
 
     private Optional<String> extractAuthorizationHeader(StompHeaderAccessor accessor) {
@@ -126,5 +127,13 @@ public class StompPreHandler implements ChannelInterceptor {
             authHeader = accessor.getFirstNativeHeader("authorization");
         }
         return Optional.ofNullable(authHeader);
+    }
+
+    private UserDetails loadActiveUserDetails(String email) {
+        try {
+            return memberDetailService.loadUserByUsername(email);
+        } catch (AuthException e) {
+            throw new StompException(e.getErrorCode());
+        }
     }
 }

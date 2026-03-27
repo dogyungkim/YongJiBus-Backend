@@ -21,19 +21,19 @@ public class FCMTokenService {
 
     @Transactional
     public void saveToken(Member member, String token) {
-        Optional<FCMToken> existingToken = fcmTokenRepository.findByMemberAndIsActiveTrue(member);
-        
+        Optional<FCMToken> existingToken = fcmTokenRepository.findByMember(member);
         if (existingToken.isPresent()) {
             FCMToken fcmToken = existingToken.get();
             fcmToken.updateToken(token);
+            fcmToken.reactivate();
             fcmTokenRepository.save(fcmToken);
-        } else {
-            FCMToken newToken = FCMToken.builder()
-                    .member(member)
-                    .token(token)
-                    .build();
-            fcmTokenRepository.save(newToken);
+            return;
         }
+
+        fcmTokenRepository.save(FCMToken.builder()
+                .member(member)
+                .token(token)
+                .build());
     }
 
     @Transactional
@@ -56,4 +56,4 @@ public class FCMTokenService {
 
         return fcmToken.get();
     }
-} 
+}
