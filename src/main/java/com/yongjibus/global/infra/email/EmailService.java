@@ -1,6 +1,7 @@
 package com.yongjibus.global.infra.email;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -40,7 +41,7 @@ public class EmailService {
             helper.setText(htmlContent, true); // true는 HTML 내용임을 나타냄
             
             mailSender.send(message);
-        } catch (MessagingException e) {
+        } catch (MessagingException | MailException e) {
             throw new AuthException(ErrorCode.EMAIL_SEND_FAILED);
         }
     }
@@ -63,7 +64,7 @@ public class EmailService {
             helper.setText(htmlContent, true);
             
             mailSender.send(message);
-        } catch (MessagingException e) {
+        } catch (MessagingException | MailException e) {
             throw new AuthException(ErrorCode.EMAIL_SEND_FAILED);
         }
     }

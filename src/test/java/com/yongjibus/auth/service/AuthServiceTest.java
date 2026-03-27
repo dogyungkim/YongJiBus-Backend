@@ -3,6 +3,9 @@ package com.yongjibus.auth.service;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -15,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -90,6 +94,37 @@ class AuthServiceTest {
         verify(emailTokenService).deleteAuthCode(TEST_EMAIL);
         verify(emailTokenService).setVerified(TEST_EMAIL);
         verify(emailBounceService).deleteEmailPending(TEST_EMAIL);
+    }
+
+    @Test
+    @DisplayName("인증 메일 발송 성공 시 메일 발송 후 인증 코드와 pending 상태를 저장한다")
+    void sendAuthEmailSuccessTest() {
+        // when
+        authService.sendAuthEmail(TEST_EMAIL);
+
+        // then
+        InOrder inOrder = inOrder(emailService, emailTokenService, emailBounceService);
+        inOrder.verify(emailService).sendAuthEmail(anyString(), anyString());
+        inOrder.verify(emailTokenService).setAuthCode(anyString(), anyString());
+        inOrder.verify(emailBounceService).saveEmailPending(TEST_EMAIL);
+    }
+
+    @Test
+    @DisplayName("인증 메일 발송 실패 시 인증 코드 상태를 정리하고 예외를 다시 던진다")
+    void sendAuthEmailFail_ShouldCleanupState() {
+        // given
+        doThrow(new AuthException(ErrorCode.EMAIL_SEND_FAILED))
+                .when(emailService).sendAuthEmail(anyString(), anyString());
+
+        // when & then
+        assertThatThrownBy(() -> authService.sendAuthEmail(TEST_EMAIL))
+                .isInstanceOf(AuthException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.EMAIL_SEND_FAILED);
+
+        verify(emailTokenService).deleteAuthCode(TEST_EMAIL);
+        verify(emailBounceService).deleteEmailPending(TEST_EMAIL);
+        verify(emailTokenService, never()).setAuthCode(anyString(), anyString());
+        verify(emailBounceService, never()).saveEmailPending(anyString());
     }
 
     @Test

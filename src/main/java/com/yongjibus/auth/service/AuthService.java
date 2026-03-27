@@ -38,11 +38,17 @@ public class AuthService {
     public String sendAuthEmail(String email) {
         String authCode = AuthCodeGenerator.generateCode();
 
-        emailTokenService.setAuthCode(email, authCode);
-        emailService.sendAuthEmail(email, authCode);
-        // 발송 요청한 이메일 저장 (이메일 발송 요청 추적)
-        emailBounceService.saveEmailPending(email);
-        return authCode;
+        try {
+            emailService.sendAuthEmail(email, authCode);
+            emailTokenService.setAuthCode(email, authCode);
+            // 발송 요청한 이메일 저장 (이메일 발송 요청 추적)
+            emailBounceService.saveEmailPending(email);
+            return authCode;
+        } catch (RuntimeException e) {
+            emailTokenService.deleteAuthCode(email);
+            emailBounceService.deleteEmailPending(email);
+            throw e;
+        }
     }
 
     /**
