@@ -1,5 +1,7 @@
 package com.yongjibus.vacation.service;
 
+import com.yongjibus.global.error.code.ErrorCode;
+import com.yongjibus.global.error.exception.VacationException;
 import com.yongjibus.vacation.domain.VacationPeriod;
 import com.yongjibus.vacation.repository.VacationPeriodRepository;
 
@@ -25,6 +27,16 @@ public class VacationService {
      * @param vacationPeriod 저장할 방학 기간
      */
     public void saveVacationPeriod(VacationPeriod vacationPeriod) {
+        vacationPeriod.validateDateRange();
+
+        boolean overlapsExistingPeriod = vacationPeriodRepository
+                .existsByStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        vacationPeriod.getEndDate(),
+                        vacationPeriod.getStartDate());
+        if (overlapsExistingPeriod) {
+            throw new VacationException(ErrorCode.OVERLAPPING_VACATION_PERIOD);
+        }
+
         vacationPeriodRepository.save(vacationPeriod);
         evictDayInfoCache();
     }

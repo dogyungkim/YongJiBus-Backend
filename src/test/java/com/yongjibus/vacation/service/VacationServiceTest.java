@@ -1,5 +1,7 @@
 package com.yongjibus.vacation.service;
 
+import com.yongjibus.global.error.code.ErrorCode;
+import com.yongjibus.global.error.exception.VacationException;
 import com.yongjibus.vacation.domain.VacationPeriod;
 import com.yongjibus.vacation.repository.VacationPeriodRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,6 +16,7 @@ import org.springframework.cache.CacheManager;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -50,6 +53,45 @@ class VacationServiceTest {
 
         // then
         verify(vacationPeriodRepository, times(1)).save(sampleVacationPeriod);
+    }
+
+    @Test
+    @DisplayName("시작일이 종료일보다 늦은 방학 기간은 저장할 수 없다")
+    void saveVacationPeriod_WhenStartDateIsAfterEndDate_ShouldThrow() {
+        // given
+        VacationPeriod invalidPeriod = VacationPeriod.builder()
+                .startDate(LocalDate.of(2024, 3, 1))
+                .endDate(LocalDate.of(2024, 2, 29))
+                .vacationDescription("잘못된 방학")
+                .build();
+
+        // when & then
+        assertThatThrownBy(() -> vacationService.saveVacationPeriod(invalidPeriod))
+                .isInstanceOf(VacationException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_VACATION_PERIOD);
+        verify(vacationPeriodRepository, never()).save(any(VacationPeriod.class));
+    }
+
+    @Test
+    @DisplayName("기존 기간과 겹치는 방학 기간은 저장할 수 없다")
+    void saveVacationPeriod_WhenOverlappingPeriodExists_ShouldThrow() {
+        // given
+        VacationPeriod overlappingPeriod = VacationPeriod.builder()
+                .startDate(LocalDate.of(2024, 2, 15))
+                .endDate(LocalDate.of(2024, 3, 10))
+                .vacationDescription("겹치는 방학")
+                .build();
+
+        when(vacationPeriodRepository.existsByStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                overlappingPeriod.getEndDate(),
+                overlappingPeriod.getStartDate()
+        )).thenReturn(true);
+
+        // when & then
+        assertThatThrownBy(() -> vacationService.saveVacationPeriod(overlappingPeriod))
+                .isInstanceOf(VacationException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.OVERLAPPING_VACATION_PERIOD);
+        verify(vacationPeriodRepository, never()).save(any(VacationPeriod.class));
     }
 
     @Test

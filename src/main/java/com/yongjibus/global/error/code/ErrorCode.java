@@ -22,6 +22,8 @@ public enum ErrorCode {
     // 날짜 관련 오류
     DATE_INFO_NOT_FOUND(HttpStatus.NOT_FOUND, "날짜 정보를 찾을 수 없습니다."),
     INVALID_DATE_FORMAT(HttpStatus.BAD_REQUEST, "날짜 형식이 올바르지 않습니다."),
+    INVALID_VACATION_PERIOD(HttpStatus.BAD_REQUEST, "방학 시작일은 종료일보다 늦을 수 없습니다."),
+    OVERLAPPING_VACATION_PERIOD(HttpStatus.CONFLICT, "기존 방학 기간과 겹칠 수 없습니다."),
 
     // 토큰 관련 오류
     EXPIRED_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "만료된 토큰입니다."),

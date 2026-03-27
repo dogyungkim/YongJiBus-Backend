@@ -2,6 +2,9 @@ package com.yongjibus.vacation.domain;
 
 import java.time.LocalDate;
 
+import com.yongjibus.global.error.code.ErrorCode;
+import com.yongjibus.global.error.exception.VacationException;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -33,4 +36,10 @@ public class VacationPeriod {
 
     @Column(name = "vacation_description")
     private String vacationDescription;
+
+    public void validateDateRange() {
+        if (startDate == null || endDate == null || startDate.isAfter(endDate)) {
+            throw new VacationException(ErrorCode.INVALID_VACATION_PERIOD);
+        }
+    }
 }

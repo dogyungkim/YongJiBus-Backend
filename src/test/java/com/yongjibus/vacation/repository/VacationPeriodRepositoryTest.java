@@ -95,4 +95,44 @@ class VacationPeriodRepositoryTest {
         // then
         assertThat(foundVacationPeriod).isNull();
     }
-} 
+
+    @Test
+    @DisplayName("겹치는 방학 기간이 있으면 존재 여부 조회가 true를 반환한다")
+    void existsByDateOverlap_WhenPeriodOverlaps_ShouldReturnTrue() {
+        // given
+        vacationPeriodRepository.save(VacationPeriod.builder()
+            .startDate(LocalDate.of(2024, 1, 1))
+            .endDate(LocalDate.of(2024, 2, 29))
+            .vacationDescription("겨울방학")
+            .build());
+
+        // when
+        boolean exists = vacationPeriodRepository.existsByStartDateLessThanEqualAndEndDateGreaterThanEqual(
+            LocalDate.of(2024, 3, 1),
+            LocalDate.of(2024, 2, 15)
+        );
+
+        // then
+        assertThat(exists).isTrue();
+    }
+
+    @Test
+    @DisplayName("겹치는 방학 기간이 없으면 존재 여부 조회가 false를 반환한다")
+    void existsByDateOverlap_WhenPeriodDoesNotOverlap_ShouldReturnFalse() {
+        // given
+        vacationPeriodRepository.save(VacationPeriod.builder()
+            .startDate(LocalDate.of(2024, 1, 1))
+            .endDate(LocalDate.of(2024, 2, 29))
+            .vacationDescription("겨울방학")
+            .build());
+
+        // when
+        boolean exists = vacationPeriodRepository.existsByStartDateLessThanEqualAndEndDateGreaterThanEqual(
+            LocalDate.of(2024, 3, 31),
+            LocalDate.of(2024, 3, 1)
+        );
+
+        // then
+        assertThat(exists).isFalse();
+    }
+}
