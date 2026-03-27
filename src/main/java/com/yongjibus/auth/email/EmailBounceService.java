@@ -1,6 +1,10 @@
 package com.yongjibus.auth.email;
 
+import java.io.IOException;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
@@ -18,16 +22,31 @@ import com.yongjibus.global.infra.gmail.GmailApiService;
 @RequiredArgsConstructor
 public class EmailBounceService {
     private final EmailPendingRepository emailPendingRepository;
-
     private final GmailApiService gmailApiService;
+    private final GmailHistoryCheckpointRepository gmailHistoryCheckpointRepository;
 
+    @Transactional
     public void processBounceNotification(String historyId) {
+        BigInteger notifiedHistoryId = new BigInteger(historyId);
+        Optional<GmailHistoryCheckpoint> checkpointOptional = gmailHistoryCheckpointRepository
+                .findById(GmailHistoryCheckpoint.CHECKPOINT_KEY);
+
+        if (checkpointOptional.isEmpty()) {
+            log.warn("No Gmail history checkpoint found. Initializing checkpoint with notification historyId={}", notifiedHistoryId);
+            initializeCheckpointIfAbsent(notifiedHistoryId);
+            return;
+        }
+
+        GmailHistoryCheckpoint checkpoint = checkpointOptional.get();
+        if (notifiedHistoryId.compareTo(checkpoint.getLastHistoryId()) <= 0) {
+            log.info("Skipping duplicate or stale Gmail notification. notifiedHistoryId={}, checkpoint={}",
+                    notifiedHistoryId, checkpoint.getLastHistoryId());
+            return;
+        }
+
         try {
-            var history = gmailApiService.getHistory(BigInteger.valueOf(Long.parseLong(historyId)));
-            if (history.getHistory() == null) {
-                throw new RuntimeException("History is null");
-            }
-            for (History h : history.getHistory()) {
+            HistorySyncResult historySyncResult = getHistorySince(checkpoint.getLastHistoryId());
+            for (History h : historySyncResult.histories()) {
                 // 새로운 메시지가 추가된 경우만 처리
                 if (h.getMessagesAdded() != null) {
                     //Message ID 추출
@@ -47,9 +66,17 @@ public class EmailBounceService {
                     log.debug("MessagesAdded is null");
                 }
             }
+            checkpoint.advanceTo(historySyncResult.latestHistoryId().max(notifiedHistoryId));
+            gmailHistoryCheckpointRepository.save(checkpoint);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Transactional
+    public void initializeCheckpointIfAbsent(BigInteger historyId) {
+        gmailHistoryCheckpointRepository.findById(GmailHistoryCheckpoint.CHECKPOINT_KEY)
+                .orElseGet(() -> gmailHistoryCheckpointRepository.save(GmailHistoryCheckpoint.initialize(historyId)));
     }
 
     private String getFailedEmailAddressFromBounceMail(Message message) {
@@ -78,5 +105,27 @@ public class EmailBounceService {
     @Transactional
     public void deleteEmailPending(String emailAddress) {
         emailPendingRepository.deleteEmailPending(emailAddress);
+    }
+
+    private HistorySyncResult getHistorySince(BigInteger startHistoryId) throws IOException {
+        List<History> histories = new ArrayList<>();
+        BigInteger latestHistoryId = startHistoryId;
+        String pageToken = null;
+
+        do {
+            var response = gmailApiService.getHistory(startHistoryId, pageToken);
+            if (response.getHistory() != null) {
+                histories.addAll(response.getHistory());
+            }
+            if (response.getHistoryId() != null) {
+                latestHistoryId = latestHistoryId.max(response.getHistoryId());
+            }
+            pageToken = response.getNextPageToken();
+        } while (pageToken != null && !pageToken.isBlank());
+
+        return new HistorySyncResult(histories, latestHistoryId);
+    }
+
+    private record HistorySyncResult(List<History> histories, BigInteger latestHistoryId) {
     }
 }

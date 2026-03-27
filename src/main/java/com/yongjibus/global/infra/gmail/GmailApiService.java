@@ -44,12 +44,18 @@ public class GmailApiService {
      * History ID를 사용하여 메시지 추가 내역을 가져옵니다.
      */
     public ListHistoryResponse getHistory(BigInteger startHistoryId) throws IOException {
-        ListHistoryResponse history = getGmailService().users().history()
+        return getHistory(startHistoryId, null);
+    }
+
+    public ListHistoryResponse getHistory(BigInteger startHistoryId, String pageToken) throws IOException {
+        var request = getGmailService().users().history()
                 .list(USER_ID)
                 .setStartHistoryId(startHistoryId)
-                .setHistoryTypes(List.of("messageAdded"))
-                .execute();
-        return history;
+                .setHistoryTypes(List.of("messageAdded"));
+        if (pageToken != null && !pageToken.isBlank()) {
+            request.setPageToken(pageToken);
+        }
+        return request.execute();
     }
 
     /**
@@ -67,10 +73,10 @@ public class GmailApiService {
      * Gmail 받은 편지함에 대한 Watch를 설정하거나 갱신합니다.
      * 바운스 메일 감지를 위해 Gmail API의 watch 기능을 사용합니다.
      */
-    public void watchBounceMailBox() throws IOException {
+    public BigInteger watchBounceMailBox() throws IOException {
         if (!isConfigured()) {
             log.info("Skipping Gmail watch registration because Gmail OAuth settings are disabled or incomplete");
-            return;
+            return null;
         }
 
         WatchRequest watchRequest = new WatchRequest()
@@ -81,6 +87,7 @@ public class GmailApiService {
        WatchResponse watchResponse = getGmailService().users().watch(USER_ID, watchRequest).execute();
        log.info("Registered Gmail watch with historyId={} expiration={}",
                watchResponse.getHistoryId(), watchResponse.getExpiration());
+       return watchResponse.getHistoryId();
     }
 
     /**
