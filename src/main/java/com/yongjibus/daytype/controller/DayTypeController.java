@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.time.LocalDate;
+import org.springframework.format.annotation.DateTimeFormat;
 
 @AllArgsConstructor
 @RestController
@@ -54,7 +55,7 @@ public class DayTypeController {
             required = true, 
             example = "2023-12-25"
         )
-        @RequestParam("date") LocalDate date
+        @RequestParam("date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date
     ){
         return YongJiResponse.success(GetDayTypeResponseDTO.fromEntity(dayTypeService.findDayInfo(date)));
     }

@@ -29,6 +29,7 @@ public class AuthService {
     private final JwtService jwtService;
 
     private final EmailBounceService emailBounceService;
+
     /**
      * 이메일 인증 코드를 생성하고 발송합니다.
      * 
@@ -54,7 +55,7 @@ public class AuthService {
     /**
      * 사용자가 입력한 인증 코드의 유효성을 검증합니다.
      * 
-     * @param email 검증할 이메일 주소
+     * @param email    검증할 이메일 주소
      * @param authCode 사용자가 입력한 인증 코드
      * @return 인증 성공 여부
      */
@@ -71,16 +72,16 @@ public class AuthService {
             emailTokenService.setVerified(email);
             // 발송 요청한 이메일 삭제 (이메일 발송 요청 추적)
             emailBounceService.deleteEmailPending(email);
-        } else {        
+        } else {
             throw new AuthException(ErrorCode.INVALID_AUTH_CODE);
         }
     }
-    
+
     /**
      * 사용자 로그인을 처리합니다.
      * 이메일과 비밀번호를 검증하여 유효한 사용자인지 확인합니다.
      * 
-     * @param email 로그인할 사용자의 이메일
+     * @param email    로그인할 사용자의 이메일
      * @param password 로그인할 사용자의 비밀번호
      * @return 발급된 AccessToken과 RefreshToken의 리스트 [accessToken, refreshToken]
      * @throws AuthException 이메일이 존재하지 않거나 비밀번호가 일치하지 않을 경우
@@ -90,18 +91,18 @@ public class AuthService {
 
         Member member = memberService.getMemberByEmail(email);
 
-        if(member.getIsDeleted()) {
+        if (member.getIsDeleted()) {
             throw new AuthException(ErrorCode.MEMBER_DELETED);
         }
 
         if (!passwordEncoder.matches(password, member.getPassword())) {
             throw new AuthException(ErrorCode.INVALID_CREDENTIALS);
         }
-        
+
         // 토큰 발급
         String accessToken = jwtService.createAccessToken(email);
         String refreshToken = jwtService.createAndSaveRefreshToken(email);
-        
+
         return List.of(accessToken, refreshToken);
     }
 
@@ -117,11 +118,11 @@ public class AuthService {
         memberService.validateMemberInfoToSignup(member);
 
         Member newMember = Member.builder()
-            .email(member.getEmail())
-            .name(member.getName())
-            .password(passwordEncoder.encode(member.getPassword()))
-            .username(member.getUsername())
-            .build();
+                .email(member.getEmail())
+                .name(member.getName())
+                .password(passwordEncoder.encode(member.getPassword()))
+                .username(member.getUsername())
+                .build();
 
         memberService.saveMember(newMember);
 
@@ -143,11 +144,11 @@ public class AuthService {
         if (!jwtService.validateRefreshToken(refreshToken)) {
             throw new AuthException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
-        
+
         String email = member.getEmail();
         String newAccessToken = jwtService.createAccessToken(email);
         String newRefreshToken = jwtService.createAndSaveRefreshToken(email);
-        
+
         return List.of(newAccessToken, newRefreshToken);
     }
 
@@ -173,14 +174,14 @@ public class AuthService {
     public void signoutMember(Member member) {
         // RefreshToken 삭제 (로그아웃 처리)
         jwtService.deleteRefreshToken(member.getEmail());
-        
+
         // 회원 상태를 삭제됨으로 변경
         member.delete();
-        
+
         // 변경된 회원 정보 저장
         memberService.saveMember(member);
     }
-    
+
     /**
      * 사용자 이름(username) 중복 여부를 확인합니다.
      * 

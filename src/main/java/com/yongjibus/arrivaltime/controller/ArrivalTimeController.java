@@ -23,6 +23,7 @@ import com.yongjibus.arrivaltime.domain.ArrivalTime;
 
 import java.util.Map;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -32,7 +33,7 @@ public class ArrivalTimeController {
     private final ArrivalTimeService arrivalTimeService;
 
     @PostMapping("/save")
-    public ResponseEntity<YongJiResponse<String>> saveArrivalTime(@RequestBody SaveArrivalTimeRequestDTO request) {
+    public ResponseEntity<YongJiResponse<String>> saveArrivalTime(@Valid @RequestBody SaveArrivalTimeRequestDTO request) {
         arrivalTimeService.saveArrivalTime(request);
         return YongJiResponse.success("Success");
     }

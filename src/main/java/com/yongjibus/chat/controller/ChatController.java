@@ -118,7 +118,7 @@ public class ChatController {
             @Parameter(description = "현재 인증된 사용자", hidden = true)
             @AuthenticationPrincipal MemberDetail memberDetail, 
             @Parameter(description = "채팅방 생성 정보", required = true)
-            @RequestBody ChatRoomCreateDTO request) {
+            @Valid @RequestBody ChatRoomCreateDTO request) {
         ChatRoom chatRoom = chatService.createChatRoom(
             request.getName(), 
             request.getDepartureTime(),
@@ -209,7 +209,7 @@ public class ChatController {
             @Parameter(description = "현재 인증된 사용자", hidden = true)
             @AuthenticationPrincipal MemberDetail memberDetail,
             @Parameter(description = "FCM 토큰 정보", required = true)
-            @RequestBody FcmTokenRegisterRequestDTO requestDTO) {
+            @Valid @RequestBody FcmTokenRegisterRequestDTO requestDTO) {
         
         log.info("FCM 토큰 등록 요청: 사용자 {}", memberDetail.getUsername());
         
