@@ -76,12 +76,8 @@ public class ChatService {
 
     @Transactional
     public ChatRoom joinChatRoom(Long roomId, Member member) {
-        ChatRoom chatRoom = chatRoomRepository.findById(roomId)
+        ChatRoom chatRoom = chatRoomRepository.findByIdForUpdate(roomId)
             .orElseThrow(() -> new ChatException(ErrorCode.CHAT_ROOM_NOT_FOUND));
-        
-        if (chatRoom.getMembers().size() >= 5){
-            throw new ChatException(ErrorCode.CHAT_ROOM_FULL);
-        }
 
         // 이미 해당 채팅방에 참여 중인지 확인
         boolean alreadyJoined = chatRoomMemberRepository
@@ -90,6 +86,10 @@ public class ChatService {
         
         if (alreadyJoined) {
             return chatRoom;
+        }
+
+        if (chatRoom.getUserCount() >= 5){
+            throw new ChatException(ErrorCode.CHAT_ROOM_FULL);
         }
         
         // 채팅방에 멤버 추가

@@ -25,4 +25,6 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatRoomMember, 
     @Query("SELECT cr FROM ChatRoom cr WHERE cr.id NOT IN " +
            "(SELECT crm.chatRoom.id FROM ChatRoomMember crm WHERE crm.member = :member AND crm.active = true)")
     List<ChatRoom> findChatRoomsNotJoinedByMember(@Param("member") Member member);
+
+    long countByChatRoom_IdAndActiveTrue(Long chatRoomId);
 } 

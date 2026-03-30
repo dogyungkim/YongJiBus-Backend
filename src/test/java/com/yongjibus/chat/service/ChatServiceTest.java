@@ -38,6 +38,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -141,7 +142,7 @@ class ChatServiceTest {
     @DisplayName("채팅방 참여 시 저장 후 입장 메시지 배달을 위임한다")
     void joinChatRoomTest() {
         // given
-        when(chatRoomRepository.findById(anyLong())).thenReturn(Optional.of(testChatRoom));
+        when(chatRoomRepository.findByIdForUpdate(anyLong())).thenReturn(Optional.of(testChatRoom));
         when(chatRoomRepository.save(any(ChatRoom.class))).thenReturn(testChatRoom);
         when(chatRoomMemberRepository.findByMemberAndChatRoomAndActiveTrue(testMember, testChatRoom))
             .thenReturn(Optional.empty());
@@ -159,6 +160,63 @@ class ChatServiceTest {
             argThat(message -> message.getMessageType() == ChatMessage.MessageType.ENTER),
             eq(1L)
         );
+    }
+
+    @Test
+    @DisplayName("이미 참여 중인 사용자는 정원이 가득 차도 기존 채팅방을 그대로 반환한다")
+    void joinChatRoom_WhenMemberAlreadyJoinedAndRoomIsFull_ShouldReturnExistingRoom() {
+        // given
+        ChatRoom fullChatRoom = ChatRoom.builder()
+                .name("가득 찬 채팅방")
+                .departureTime(LocalTime.of(14, 0))
+                .build();
+        ReflectionTestUtils.setField(fullChatRoom, "id", 1L);
+        fullChatRoom.addMember(testMember);
+        fullChatRoom.addMember(Member.builder().id(2L).username("user2").build());
+        fullChatRoom.addMember(Member.builder().id(3L).username("user3").build());
+        fullChatRoom.addMember(Member.builder().id(4L).username("user4").build());
+        fullChatRoom.addMember(Member.builder().id(5L).username("user5").build());
+
+        when(chatRoomRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(fullChatRoom));
+        when(chatRoomMemberRepository.findByMemberAndChatRoomAndActiveTrue(testMember, fullChatRoom))
+            .thenReturn(Optional.of(testChatRoomMember));
+
+        // when
+        ChatRoom result = chatService.joinChatRoom(1L, testMember);
+
+        // then
+        assertThat(result).isSameAs(fullChatRoom);
+        verify(chatRoomRepository, never()).save(any(ChatRoom.class));
+        verify(chatRepository, never()).save(any(ChatMessage.class));
+        verifyNoInteractions(chatMessageDeliveryPublisher);
+    }
+
+    @Test
+    @DisplayName("새 사용자는 정원이 가득 찬 채팅방에 참여할 수 없다")
+    void joinChatRoom_WhenRoomIsFull_ShouldThrow() {
+        // given
+        ChatRoom fullChatRoom = ChatRoom.builder()
+                .name("가득 찬 채팅방")
+                .departureTime(LocalTime.of(14, 0))
+                .build();
+        ReflectionTestUtils.setField(fullChatRoom, "id", 1L);
+        fullChatRoom.addMember(Member.builder().id(10L).username("user10").build());
+        fullChatRoom.addMember(Member.builder().id(11L).username("user11").build());
+        fullChatRoom.addMember(Member.builder().id(12L).username("user12").build());
+        fullChatRoom.addMember(Member.builder().id(13L).username("user13").build());
+        fullChatRoom.addMember(Member.builder().id(14L).username("user14").build());
+
+        when(chatRoomRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(fullChatRoom));
+        when(chatRoomMemberRepository.findByMemberAndChatRoomAndActiveTrue(testMember2, fullChatRoom))
+            .thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> chatService.joinChatRoom(1L, testMember2))
+            .isInstanceOf(ChatException.class)
+            .hasFieldOrPropertyWithValue("errorCode", ErrorCode.CHAT_ROOM_FULL);
+        verify(chatRoomRepository, never()).save(any(ChatRoom.class));
+        verify(chatRepository, never()).save(any(ChatMessage.class));
+        verifyNoInteractions(chatMessageDeliveryPublisher);
     }
 
     @Test
