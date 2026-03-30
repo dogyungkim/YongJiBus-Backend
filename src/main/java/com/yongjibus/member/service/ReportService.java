@@ -3,10 +3,10 @@ package com.yongjibus.member.service;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.yongjibus.global.error.code.ErrorCode;
 import com.yongjibus.global.error.exception.MemberException;
-import com.yongjibus.global.infra.email.EmailService;
 import com.yongjibus.member.domain.Member;
 import com.yongjibus.member.domain.MemberReport;
 import com.yongjibus.member.repository.MemberReportRepository;
@@ -18,10 +18,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ReportService {
 
-  private final EmailService emailService;
   private final MemberReportRepository memberReportRepository;
   private final MemberRepository memberRepository;
+  private final ReportEmailPublisher reportEmailPublisher;
 
+  @Transactional
   public void createReport(MemberReport memberReport, String reportedUsername) {
     Optional<Member> reportedMember = memberRepository.findByUsername(reportedUsername);
 
@@ -30,9 +31,7 @@ public class ReportService {
     }
 
     memberReport.setReportedMember(reportedMember.get());
-    // 신고 처리
     memberReportRepository.save(memberReport);
-    // 신고 이메일 전송
-    emailService.sendReportEmail(memberReport);
+    reportEmailPublisher.publishAfterCommit(memberReport);
   }
 }

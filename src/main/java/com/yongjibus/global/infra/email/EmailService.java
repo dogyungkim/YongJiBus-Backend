@@ -10,8 +10,6 @@ import org.thymeleaf.context.Context;
 
 import com.yongjibus.global.error.code.ErrorCode;
 import com.yongjibus.global.error.exception.AuthException;
-import com.yongjibus.member.domain.MemberReport;
-
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +44,7 @@ public class EmailService {
         }
     }
 
-    public void sendReportEmail(MemberReport userReport) {
+    public void sendReportEmail(String reportedUsername, String reason, String reporterUsername, Long roomId) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -55,10 +53,10 @@ public class EmailService {
             helper.setSubject("신고 처리");
             
             Context context = new Context();
-            context.setVariable("reportedUser", userReport.getReportedMember().getUsername());
-            context.setVariable("reason", userReport.getReason());
-            context.setVariable("reporter", userReport.getReporter().getUsername());
-            context.setVariable("roomId", userReport.getRoomId());
+            context.setVariable("reportedUser", reportedUsername);
+            context.setVariable("reason", reason);
+            context.setVariable("reporter", reporterUsername);
+            context.setVariable("roomId", roomId);
             
             String htmlContent = templateEngine.process("report-email-template", context);
             helper.setText(htmlContent, true);
