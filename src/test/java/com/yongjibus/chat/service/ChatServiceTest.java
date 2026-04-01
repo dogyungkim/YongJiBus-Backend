@@ -220,6 +220,70 @@ class ChatServiceTest {
     }
 
     @Test
+    @DisplayName("마지막 참여자가 퇴장하면 채팅방을 삭제하고 퇴장 메시지는 남기지 않는다")
+    void leaveChatRoom_WhenLastMemberLeaves_ShouldDeleteRoomWithoutLeaveMessage() {
+        // given
+        testChatRoom.addMember(testMember);
+        when(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom));
+        when(chatRoomMemberRepository.findByMemberAndChatRoomAndActiveTrue(testMember, testChatRoom))
+            .thenReturn(Optional.of(testChatRoomMember));
+        when(chatRoomRepository.save(any(ChatRoom.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        chatService.leaveChatRoom(1L, testMember);
+
+        // then
+        verify(chatRoomRepository).delete(testChatRoom);
+        verify(chatRepository, never()).save(any(ChatMessage.class));
+        verifyNoInteractions(chatMessageDeliveryPublisher);
+    }
+
+    @Test
+    @DisplayName("채팅방에 다른 참여자가 남아 있으면 퇴장 메시지를 저장하고 배달을 위임한다")
+    void leaveChatRoom_WhenRoomStillHasMembers_ShouldSaveLeaveMessage() {
+        // given
+        testChatRoom.addMember(testMember);
+        testChatRoom.addMember(testMember2);
+        when(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom));
+        when(chatRoomMemberRepository.findByMemberAndChatRoomAndActiveTrue(testMember, testChatRoom))
+            .thenReturn(Optional.of(testChatRoomMember));
+        when(chatRoomRepository.save(any(ChatRoom.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(chatRepository.save(any(ChatMessage.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        chatService.leaveChatRoom(1L, testMember);
+
+        // then
+        verify(chatRepository).save(argThat(message ->
+            message.getMessageType() == ChatMessage.MessageType.LEAVE
+                && message.getContent().contains(testMember.getUsername())
+                && Long.valueOf(1L).equals(message.getRoomId())
+        ));
+        verify(chatMessageDeliveryPublisher).publishAfterCommitByRoomId(
+            argThat(message -> message.getMessageType() == ChatMessage.MessageType.LEAVE),
+            eq(1L)
+        );
+        verify(chatRoomRepository, never()).delete(any(ChatRoom.class));
+    }
+
+    @Test
+    @DisplayName("활성 참여자가 아니면 채팅방을 나갈 수 없다")
+    void leaveChatRoom_WhenMemberIsNotActive_ShouldThrowForbidden() {
+        // given
+        when(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom));
+        when(chatRoomMemberRepository.findByMemberAndChatRoomAndActiveTrue(testMember, testChatRoom))
+            .thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> chatService.leaveChatRoom(1L, testMember))
+            .isInstanceOf(ChatException.class)
+            .hasFieldOrPropertyWithValue("errorCode", ErrorCode.CHAT_ROOM_FORBIDDEN);
+        verify(chatRoomRepository, never()).delete(any(ChatRoom.class));
+        verify(chatRepository, never()).save(any(ChatMessage.class));
+        verifyNoInteractions(chatMessageDeliveryPublisher);
+    }
+
+    @Test
     @DisplayName("채팅방 조회 테스트")
     void getChatRoomTest() {
         // given

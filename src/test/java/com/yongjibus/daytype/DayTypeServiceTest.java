@@ -1,9 +1,13 @@
 package com.yongjibus.daytype;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.LocalDate;
@@ -79,6 +83,22 @@ class DayTypeServiceTest {
     }
 
     @Test
+    @DisplayName("방학 기간이면 저장소 대신 방학 정보를 반환한다")
+    void findDayInfo_WhenDateIsVacation_ShouldReturnVacationInfo() {
+        // given
+        when(vacationService.isVacation(testDate)).thenReturn(true);
+
+        // when
+        DateInfo result = dayTypeService.findDayInfo(testDate);
+
+        // then
+        assertThat(result.getDate()).isEqualTo(testDate);
+        assertThat(result.isHoliday()).isTrue();
+        assertThat(result.getDateKind()).isEqualTo("방학");
+        verify(dayTypeRepository, never()).findByDate(any(LocalDate.class));
+    }
+
+    @Test
     @DisplayName("공휴일 정보 설정 테스트")
     void setHolidayInfo_ShouldSetHolidayData() throws Exception {
         // given
@@ -92,10 +112,41 @@ class DayTypeServiceTest {
     }
 
     @Test
+    @DisplayName("잘못된 XML 응답은 런타임 예외로 감싸고 저장하지 않는다")
+    void loadHolidayInfo_ShouldThrowException_WhenXmlIsMalformed() {
+        // given
+        when(holidayApiClient.fetchHolidayInfo(any(LocalDate.class))).thenReturn("<response><body>broken");
+
+        // when & then
+        assertThatThrownBy(() -> dayTypeService.loadHolidayInfo())
+            .isInstanceOf(RuntimeException.class)
+            .hasMessageContaining("Failed to get holiday data");
+        verify(dayTypeRepository, never()).setHolidayData(any());
+    }
+
+    @Test
     @DisplayName("API 호출 실패시 예외 발생 테스트")
     void loadHolidayInfo_ShouldThrowException_WhenApiFails() {
         assertThatThrownBy(() -> dayTypeService.loadHolidayInfo())
             .isInstanceOf(RuntimeException.class)
             .hasMessageContaining("Failed to get holiday data");
+    }
+
+    @Test
+    @DisplayName("애플리케이션 시작 시 날짜 정보 새로고침 실패는 전파하지 않는다")
+    void refreshCurrentMonthDayInfoOnStartup_ShouldSwallowRuntimeException() {
+        // given
+        DayTypeService spyService = spy(new DayTypeService(
+                holidayApiClient,
+                dayTypeRepository,
+                vacationService,
+                cacheManager
+        ));
+        doThrow(new RuntimeException("boom")).when(spyService).refreshCurrentMonthDayInfo();
+
+        // when & then
+        assertThatCode(spyService::refreshCurrentMonthDayInfoOnStartup)
+                .doesNotThrowAnyException();
+        verify(spyService).refreshCurrentMonthDayInfo();
     }
 }

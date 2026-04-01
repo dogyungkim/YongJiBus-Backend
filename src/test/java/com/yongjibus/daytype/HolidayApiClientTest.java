@@ -10,10 +10,12 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 
 import com.yongjibus.daytype.client.HolidayApiClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -72,5 +74,26 @@ class HolidayApiClientTest {
 
         // then
         assertThat(result).isEqualTo(sampleXmlResponse);
+    }
+
+    @Test
+    @DisplayName("휴일 정보 조회가 실패하면 런타임 예외로 감싼다")
+    void fetchHolidayInfo_WhenApiFails_ShouldWrapException() {
+        // given
+        String encodedOpenApiKey = URLEncoder.encode(openApiKey, StandardCharsets.UTF_8);
+        String expectedUrl = UriComponentsBuilder
+            .fromHttpUrl("http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo")
+            .queryParam("solYear", "2024")
+            .queryParam("solMonth", "01")
+            .queryParam("serviceKey", encodedOpenApiKey)
+            .build()
+            .toUriString();
+        server.expect(requestTo(expectedUrl))
+            .andRespond(withServerError());
+
+        // when & then
+        assertThatThrownBy(() -> holidayApiClient.fetchHolidayInfo(LocalDate.of(2024, 1, 1)))
+            .isInstanceOf(RuntimeException.class)
+            .hasMessageContaining("Failed to fetch holiday data");
     }
 } 

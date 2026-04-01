@@ -174,6 +174,47 @@ class StompPreHandlerTest {
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.CHAT_ROOM_FORBIDDEN);
     }
 
+    @Test
+    @DisplayName("SEND 시 인증된 사용자는 활성 회원 여부를 다시 확인한다")
+    void preSend_WhenSendByAuthenticatedMember_ShouldRefreshActiveMember() {
+        // given
+        Message<byte[]> message = buildMessage(StompCommand.SEND, accessor -> accessor.setUser(authentication));
+        when(memberDetailService.loadUserByUsername(member.getEmail())).thenReturn(memberDetail);
+
+        // when & then
+        assertThatCode(() -> stompPreHandler.preSend(message, messageChannel))
+                .doesNotThrowAnyException();
+        verify(memberDetailService).loadUserByUsername(member.getEmail());
+    }
+
+    @Test
+    @DisplayName("SEND 시 삭제된 회원이면 전송을 거절한다")
+    void preSend_WhenSendByDeletedMember_ShouldThrowMemberDeleted() {
+        // given
+        Message<byte[]> message = buildMessage(StompCommand.SEND, accessor -> accessor.setUser(authentication));
+        when(memberDetailService.loadUserByUsername(member.getEmail()))
+                .thenThrow(new AuthException(ErrorCode.MEMBER_DELETED));
+
+        // when & then
+        assertThatThrownBy(() -> stompPreHandler.preSend(message, messageChannel))
+                .isInstanceOf(StompException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_DELETED);
+    }
+
+    @Test
+    @DisplayName("DISCONNECT 시 sessionId 기준으로 세션을 제거한다")
+    void preSend_WhenDisconnect_ShouldRemoveSession() {
+        // given
+        Message<byte[]> message = buildMessage(StompCommand.DISCONNECT, accessor -> accessor.setSessionId("session-1"));
+
+        // when
+        Message<?> result = stompPreHandler.preSend(message, messageChannel);
+
+        // then
+        assertThat(result).isSameAs(message);
+        verify(websocketSessionManager).removeSessionBySessionId("session-1");
+    }
+
     private Message<byte[]> buildMessage(StompCommand command, java.util.function.Consumer<StompHeaderAccessor> customizer) {
         StompHeaderAccessor accessor = StompHeaderAccessor.create(command);
         accessor.setLeaveMutable(true);
