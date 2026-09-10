@@ -7,6 +7,7 @@ import javax.management.RuntimeErrorException;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +18,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yongjibus.global.error.code.ErrorCode;
 import com.yongjibus.global.error.exception.AuthException;
 import com.yongjibus.global.common.response.YongJiResponse;
+import com.yongjibus.global.infra.gmail.GmailPubSubTokenVerifier;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -29,10 +31,17 @@ class GmailBounceController {
 
     private final EmailBounceService emailBounceService;
     private final ObjectMapper objectMapper;
+    private final GmailPubSubTokenVerifier tokenVerifier;
 
 
     @PostMapping(consumes = { "application/json", "application/octet-stream" })
-    public ResponseEntity<YongJiResponse<Void>> post(@RequestBody byte[] body) throws JsonMappingException, JsonProcessingException {
+    public ResponseEntity<YongJiResponse<Void>> post(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @RequestBody byte[] body) throws JsonMappingException, JsonProcessingException {
+        if (!tokenVerifier.isValid(authorizationHeader)) {
+            throw new AuthException(ErrorCode.UNAUTHORIZED);
+        }
+
         // application/octet-stream 이라도 본문은 JSON 문자열일 가능성이 높음
         var json = new String(body, java.nio.charset.StandardCharsets.UTF_8);
         try {

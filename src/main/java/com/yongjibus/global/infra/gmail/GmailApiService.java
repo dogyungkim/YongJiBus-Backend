@@ -14,6 +14,7 @@ import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.ListHistoryResponse;
 import com.google.api.services.gmail.model.ListLabelsResponse;
+import com.google.api.services.gmail.model.ListMessagesResponse;
 import com.google.api.services.gmail.model.Message;
 import com.google.api.services.gmail.model.WatchResponse;
 import com.google.api.services.gmail.model.WatchRequest;
@@ -58,6 +59,20 @@ public class GmailApiService {
         return request.execute();
     }
 
+    public BigInteger getCurrentHistoryId() throws IOException {
+        return getGmailService().users().getProfile(USER_ID).execute().getHistoryId();
+    }
+
+    public ListMessagesResponse getBounceMessages(String pageToken) throws IOException {
+        var request = getGmailService().users().messages()
+                .list(USER_ID)
+                .setLabelIds(List.of(gmailProperties.getWatchedLabelId()));
+        if (pageToken != null && !pageToken.isBlank()) {
+            request.setPageToken(pageToken);
+        }
+        return request.execute();
+    }
+
     /**
      * 메시지 ID를 사용하여 메시지를 가져옵니다.
      */
@@ -81,7 +96,7 @@ public class GmailApiService {
 
         WatchRequest watchRequest = new WatchRequest()
             .setLabelIds(List.of(gmailProperties.getWatchedLabelId()))
-            .setLabelFilterAction("include")
+            .set("labelFilterBehavior", "include")
             .setTopicName(gmailProperties.getTopicName());
 
        WatchResponse watchResponse = getGmailService().users().watch(USER_ID, watchRequest).execute();

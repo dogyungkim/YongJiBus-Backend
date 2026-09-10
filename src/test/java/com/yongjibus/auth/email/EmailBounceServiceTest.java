@@ -1,6 +1,9 @@
 package com.yongjibus.auth.email;
 
+import java.io.IOException;
 import static org.mockito.ArgumentMatchers.any;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -9,6 +12,8 @@ import static org.mockito.Mockito.when;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Optional;
+
+import org.mockito.InOrder;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,10 +25,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.google.api.services.gmail.model.History;
 import com.google.api.services.gmail.model.HistoryMessageAdded;
+import com.google.api.services.gmail.model.ListMessagesResponse;
 import com.google.api.services.gmail.model.ListHistoryResponse;
 import com.google.api.services.gmail.model.Message;
 import com.google.api.services.gmail.model.MessagePart;
 import com.google.api.services.gmail.model.MessagePartHeader;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.google.api.client.http.HttpHeaders;
+import com.google.api.client.http.HttpResponseException;
 import com.yongjibus.global.infra.gmail.GmailApiService;
 
 @ExtendWith(MockitoExtension.class)
@@ -57,7 +66,6 @@ class EmailBounceServiceTest {
 
         when(gmailApiService.getHistory(BigInteger.valueOf(100), null)).thenReturn(response);
         when(gmailApiService.getMessage("message-1")).thenReturn(buildBounceMessage("bounce@example.com"));
-        when(emailPendingRepository.isEmailPending("bounce@example.com")).thenReturn(true);
 
         // when
         emailBounceService.processBounceNotification("105");
@@ -70,6 +78,105 @@ class EmailBounceServiceTest {
         verify(gmailHistoryCheckpointRepository).save(checkpointCaptor.capture());
         org.assertj.core.api.Assertions.assertThat(checkpointCaptor.getValue().getLastHistoryId())
                 .isEqualTo(BigInteger.valueOf(105));
+    }
+
+    @Test
+    @DisplayName("위조된 높은 알림 historyId로 checkpoint를 앞당기지 않는다")
+    void processBounceNotification_ShouldNotAdvanceCheckpointPastGmailHistory() throws Exception {
+        // given
+        GmailHistoryCheckpoint checkpoint = GmailHistoryCheckpoint.initialize(BigInteger.valueOf(100));
+        when(gmailHistoryCheckpointRepository.findById(GmailHistoryCheckpoint.CHECKPOINT_KEY))
+                .thenReturn(Optional.of(checkpoint));
+        when(gmailApiService.getHistory(BigInteger.valueOf(100), null))
+                .thenReturn(new ListHistoryResponse().setHistoryId(BigInteger.valueOf(105)));
+
+        // when
+        emailBounceService.processBounceNotification("999");
+
+        // then
+        ArgumentCaptor<GmailHistoryCheckpoint> checkpointCaptor = ArgumentCaptor.forClass(GmailHistoryCheckpoint.class);
+        verify(gmailHistoryCheckpointRepository).save(checkpointCaptor.capture());
+        org.assertj.core.api.Assertions.assertThat(checkpointCaptor.getValue().getLastHistoryId())
+                .isEqualTo(BigInteger.valueOf(105));
+    }
+
+    @Test
+    @DisplayName("만료된 historyId면 현재 historyId를 먼저 캡처하고 label 전체를 순회한다")
+    void processBounceNotification_WhenHistoryIdExpired_ShouldRecoverWithFullScan() throws Exception {
+        // given
+        GmailHistoryCheckpoint checkpoint = GmailHistoryCheckpoint.initialize(BigInteger.valueOf(100));
+        when(gmailHistoryCheckpointRepository.findById(GmailHistoryCheckpoint.CHECKPOINT_KEY))
+                .thenReturn(Optional.of(checkpoint));
+        GoogleJsonResponseException expiredHistory = new GoogleJsonResponseException(
+                new HttpResponseException.Builder(404, "Not Found", new HttpHeaders()), null);
+        when(gmailApiService.getHistory(BigInteger.valueOf(100), null)).thenThrow(expiredHistory);
+        when(gmailApiService.getCurrentHistoryId()).thenReturn(BigInteger.valueOf(200));
+
+        ListMessagesResponse firstPage = new ListMessagesResponse()
+                .setMessages(List.of(new Message().setId("message-1")))
+                .setNextPageToken("next-page");
+        ListMessagesResponse secondPage = new ListMessagesResponse()
+                .setMessages(List.of(new Message().setId("message-2")));
+        when(gmailApiService.getBounceMessages(null)).thenReturn(firstPage);
+        when(gmailApiService.getBounceMessages("next-page")).thenReturn(secondPage);
+        when(gmailApiService.getMessage("message-1")).thenReturn(buildBounceMessage("first@example.com"));
+        when(gmailApiService.getMessage("message-2")).thenReturn(buildBounceMessage("second@example.com"));
+
+        // when
+        emailBounceService.processBounceNotification("105");
+
+        // then
+        InOrder gmailCalls = inOrder(gmailApiService);
+        gmailCalls.verify(gmailApiService).getHistory(BigInteger.valueOf(100), null);
+        gmailCalls.verify(gmailApiService).getCurrentHistoryId();
+        gmailCalls.verify(gmailApiService).getBounceMessages(null);
+        gmailCalls.verify(gmailApiService).getMessage("message-1");
+        gmailCalls.verify(gmailApiService).getBounceMessages("next-page");
+        gmailCalls.verify(gmailApiService).getMessage("message-2");
+        verify(emailPendingRepository).setEmailPendingStatus("first@example.com", true);
+        verify(emailPendingRepository).setEmailPendingStatus("second@example.com", true);
+
+        ArgumentCaptor<GmailHistoryCheckpoint> checkpointCaptor = ArgumentCaptor.forClass(GmailHistoryCheckpoint.class);
+        verify(gmailHistoryCheckpointRepository).save(checkpointCaptor.capture());
+        org.assertj.core.api.Assertions.assertThat(checkpointCaptor.getValue().getLastHistoryId())
+                .isEqualTo(BigInteger.valueOf(200));
+    }
+
+    @Test
+    @DisplayName("history 조회가 500이면 full scan 없이 예외를 전파한다")
+    void processBounceNotification_WhenHistoryRequestReturns500_ShouldPropagate() throws Exception {
+        // given
+        GmailHistoryCheckpoint checkpoint = GmailHistoryCheckpoint.initialize(BigInteger.valueOf(100));
+        when(gmailHistoryCheckpointRepository.findById(GmailHistoryCheckpoint.CHECKPOINT_KEY))
+                .thenReturn(Optional.of(checkpoint));
+        GoogleJsonResponseException serverError = new GoogleJsonResponseException(
+                new HttpResponseException.Builder(500, "Internal Server Error", new HttpHeaders()), null);
+        when(gmailApiService.getHistory(BigInteger.valueOf(100), null)).thenThrow(serverError);
+
+        // when & then
+        assertThatThrownBy(() -> emailBounceService.processBounceNotification("105"))
+                .isInstanceOf(RuntimeException.class)
+                .hasCause(serverError);
+        verify(gmailApiService, never()).getCurrentHistoryId();
+        verify(gmailApiService, never()).getBounceMessages(any());
+    }
+
+    @Test
+    @DisplayName("history 조회가 IOException이면 full scan 없이 예외를 전파한다")
+    void processBounceNotification_WhenHistoryRequestFails_ShouldPropagate() throws Exception {
+        // given
+        GmailHistoryCheckpoint checkpoint = GmailHistoryCheckpoint.initialize(BigInteger.valueOf(100));
+        when(gmailHistoryCheckpointRepository.findById(GmailHistoryCheckpoint.CHECKPOINT_KEY))
+                .thenReturn(Optional.of(checkpoint));
+        IOException historyError = new IOException("temporary failure");
+        when(gmailApiService.getHistory(BigInteger.valueOf(100), null)).thenThrow(historyError);
+
+        // when & then
+        assertThatThrownBy(() -> emailBounceService.processBounceNotification("105"))
+                .isInstanceOf(RuntimeException.class)
+                .hasCause(historyError);
+        verify(gmailApiService, never()).getCurrentHistoryId();
+        verify(gmailApiService, never()).getBounceMessages(any());
     }
 
     @Test

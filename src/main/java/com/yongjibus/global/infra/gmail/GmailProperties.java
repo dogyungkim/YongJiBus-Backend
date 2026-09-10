@@ -14,6 +14,8 @@ public class GmailProperties {
     private boolean enabled = false;
     private String topicName = "projects/yongji-bus/topics/auth-mail-failure";
     private String watchedLabelId = "Label_6";
+    private String pubsubAudience = "";
+    private String pubsubServiceAccountEmail = "";
     private final OAuth oauth = new OAuth();
 
     @Getter

@@ -39,9 +39,9 @@ public class EmailPendingRepositoryTest {
     @Test
     @DisplayName("이메일 발송 상태 설정 테스트 - 이메일 존재하지 않음")
     public void testSetEmailPendingStatus_EmailNotExists() {
-        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
-            emailPendingRepository.setEmailPendingStatus("test@example.com", true)
-        ).isInstanceOf(IllegalStateException.class);
+        emailPendingRepository.setEmailPendingStatus("test@example.com", true);
+
+        assertThat(emailPendingRepository.isEmailPending("test@example.com")).isFalse();
     }
 
     @Test

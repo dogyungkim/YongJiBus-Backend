@@ -17,10 +17,7 @@ public class InMemoryEmailPendingRepository implements EmailPendingRepository {
 
   @Override
   public void setEmailPendingStatus(String email, boolean isPending) {
-    if (!emailPendingMap.containsKey(email)) {
-      throw new IllegalStateException("Email key does not exist: " + email);
-    }
-    emailPendingMap.put(email, isPending);
+    emailPendingMap.computeIfPresent(email, (key, value) -> isPending);
   }
 
   @Override

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -44,29 +45,31 @@ public class EmailBounceService {
             return;
         }
 
+        HistorySyncResult historySyncResult;
         try {
-            HistorySyncResult historySyncResult = getHistorySince(checkpoint.getLastHistoryId());
+            historySyncResult = getHistorySince(checkpoint.getLastHistoryId());
+        } catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() != 404) {
+                throw new RuntimeException(e);
+            }
+            recoverFromExpiredHistory(checkpoint);
+            return;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        try {
             for (History h : historySyncResult.histories()) {
                 // 새로운 메시지가 추가된 경우만 처리
                 if (h.getMessagesAdded() != null) {
-                    //Message ID 추출
-                    for(HistoryMessageAdded hma : h.getMessagesAdded()) {
-                        String messageId = hma.getMessage().getId();
-                        // Message ID를 사용하여 메시지를 가져옴
-                        var message = gmailApiService.getMessage(messageId);
-                        // 메시지를 파싱하여 실패한 이메일 주소 정보를 추출
-                        String failedEmailAddress = getFailedEmailAddressFromBounceMail(message);
-
-                        if (failedEmailAddress != null && emailPendingRepository.isEmailPending(failedEmailAddress)) {
-                            // 이메일이 전송 실패한 경우
-                            emailPendingRepository.setEmailPendingStatus(failedEmailAddress, true);
-                        }
+                    for (HistoryMessageAdded hma : h.getMessagesAdded()) {
+                        processBounceMessage(hma.getMessage().getId());
                     }
                 } else {
                     log.debug("MessagesAdded is null");
                 }
             }
-            checkpoint.advanceTo(historySyncResult.latestHistoryId().max(notifiedHistoryId));
+            checkpoint.advanceTo(historySyncResult.latestHistoryId());
             gmailHistoryCheckpointRepository.save(checkpoint);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -85,6 +88,35 @@ public class EmailBounceService {
             .map(h -> h.getValue()) // 여러 주소면 콤마로 구분됨
             .findFirst()
             .orElse(null);
+    }
+
+    private void processBounceMessage(String messageId) throws IOException {
+        var message = gmailApiService.getMessage(messageId);
+        String failedEmailAddress = getFailedEmailAddressFromBounceMail(message);
+        if (failedEmailAddress != null) {
+            emailPendingRepository.setEmailPendingStatus(failedEmailAddress, true);
+        }
+    }
+
+    private void recoverFromExpiredHistory(GmailHistoryCheckpoint checkpoint) {
+        try {
+            BigInteger currentHistoryId = gmailApiService.getCurrentHistoryId();
+            String pageToken = null;
+            do {
+                var response = gmailApiService.getBounceMessages(pageToken);
+                if (response.getMessages() != null) {
+                    for (Message message : response.getMessages()) {
+                        processBounceMessage(message.getId());
+                    }
+                }
+                pageToken = response.getNextPageToken();
+            } while (pageToken != null && !pageToken.isBlank());
+
+            checkpoint.advanceTo(currentHistoryId);
+            gmailHistoryCheckpointRepository.save(checkpoint);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Transactional

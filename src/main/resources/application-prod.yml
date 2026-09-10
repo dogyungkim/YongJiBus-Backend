@@ -63,6 +63,8 @@ gmail:
   enabled: ${GMAIL_API_ENABLED:false}
   topic-name: ${GMAIL_TOPIC_NAME:projects/yongji-bus/topics/auth-mail-failure}
   watched-label-id: ${GMAIL_WATCH_LABEL_ID:Label_6}
+  pubsub-audience: ${GMAIL_PUBSUB_AUDIENCE:}
+  pubsub-service-account-email: ${GMAIL_PUBSUB_SERVICE_ACCOUNT_EMAIL:}
   oauth:
     client-id: ${GMAIL_OAUTH_CLIENT_ID:}
     client-secret: ${GMAIL_OAUTH_CLIENT_SECRET:}
