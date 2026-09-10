@@ -54,7 +54,9 @@ dependencies {
 
 	//Database
 	implementation 'mysql:mysql-connector-java:8.0.33'
+	implementation 'org.flywaydb:flyway-core'
 	implementation 'com.github.ben-manes.caffeine:caffeine:3.2.0'
+	runtimeOnly 'org.flywaydb:flyway-mysql'
 	
 	//Runtime
 	runtimeOnly 'com.h2database:h2'

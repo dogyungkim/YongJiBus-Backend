@@ -91,12 +91,21 @@ CREATE TABLE fcmtoken (
     is_active BOOLEAN NOT NULL DEFAULT TRUE COMMENT '활성 상태',
     last_updated_at DATETIME(6) COMMENT '마지막 업데이트일시',
     
-    UNIQUE KEY uk_member_token (member_id, token),
+    UNIQUE KEY uk_fcmtoken_member (member_id),
     FOREIGN KEY (member_id) REFERENCES member(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='FCM 토큰';
 
 -- =============================================
--- 7. MemberReport 테이블 (회원 신고)
+-- 7. Gmail history checkpoint 테이블
+-- =============================================
+CREATE TABLE gmail_history_checkpoint (
+    checkpoint_key VARCHAR(64) PRIMARY KEY COMMENT '체크포인트 키',
+    last_history_id DECIMAL(39,0) NOT NULL COMMENT '마지막으로 처리한 Gmail history ID',
+    updated_at DATETIME(6) NOT NULL COMMENT '마지막 갱신 일시'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Gmail history 체크포인트';
+
+-- =============================================
+-- 8. MemberReport 테이블 (회원 신고)
 -- =============================================
 CREATE TABLE member_report (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
