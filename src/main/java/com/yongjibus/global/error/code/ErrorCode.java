@@ -25,6 +25,10 @@ public enum ErrorCode {
     INVALID_VACATION_PERIOD(HttpStatus.BAD_REQUEST, "방학 시작일은 종료일보다 늦을 수 없습니다."),
     OVERLAPPING_VACATION_PERIOD(HttpStatus.CONFLICT, "기존 방학 기간과 겹칠 수 없습니다."),
 
+    // 시간표 관련 오류
+    TIMETABLE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "시간표를 사용할 수 없습니다."),
+    INVALID_TIMETABLE_RELEASE(HttpStatus.INTERNAL_SERVER_ERROR, "시간표 데이터를 처리할 수 없습니다."),
+
     // 토큰 관련 오류
     EXPIRED_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "만료된 토큰입니다."),
     INVALID_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),

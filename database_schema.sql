@@ -129,6 +129,15 @@ CREATE TABLE vacation_period (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='휴가 기간';
 
 -- =============================================
+-- 9. TimetableRelease 테이블 (시간표 릴리스)
+-- =============================================
+CREATE TABLE timetable_release (
+    version BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '릴리스 버전',
+    payload LONGTEXT NOT NULL COMMENT '검증된 시간표 JSON',
+    published_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '발행일시'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='시간표 릴리스';
+
+-- =============================================
 -- 핵심 인덱스만 유지
 -- =============================================
 -- 실제 사용 패턴에 따라 필요시 추가 인덱스 생성
