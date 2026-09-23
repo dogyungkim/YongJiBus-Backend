@@ -8,6 +8,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,11 +26,13 @@ import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final MemberDetailService memberDetailService;
     private final JwtAuthenticationProcessingFilter jwtAuthenticationProcessingFilter;
+    private final SecurityErrorWriter securityErrorWriter;
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -47,12 +50,22 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/arrivaltime/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/timetables/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/place-images/**").permitAll()
+                .requestMatchers("/admin/**").hasRole("OPERATOR")
+                .requestMatchers(HttpMethod.GET, "/places/kakao-search").authenticated()
+                .requestMatchers(HttpMethod.GET, "/places", "/places/{placeId}", "/places/{placeId}/reviews").permitAll()
+                .requestMatchers("/places/**").authenticated()
                 .anyRequest().authenticated()
             )
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .httpBasic(basic -> basic.disable())
             .formLogin(form -> form.disable())
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint((request, response, exception) ->
+                    securityErrorWriter.write(response, com.yongjibus.global.error.code.ErrorCode.UNAUTHORIZED))
+                .accessDeniedHandler((request, response, exception) ->
+                    securityErrorWriter.write(response, com.yongjibus.global.error.code.ErrorCode.OPERATOR_REQUIRED)))
             .addFilterBefore(jwtAuthenticationProcessingFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

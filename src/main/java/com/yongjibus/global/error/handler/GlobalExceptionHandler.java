@@ -11,6 +11,8 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.yongjibus.global.common.response.YongJiResponse;
@@ -19,6 +21,7 @@ import com.yongjibus.global.error.exception.AuthException;
 import com.yongjibus.global.error.exception.ChatException;
 import com.yongjibus.global.error.exception.DateInfoNotFoundException;
 import com.yongjibus.global.error.exception.MemberException;
+import com.yongjibus.global.error.exception.PlaceException;
 import com.yongjibus.global.error.exception.TimetableException;
 import com.yongjibus.global.error.exception.VacationException;
 
@@ -73,6 +76,21 @@ public class GlobalExceptionHandler {
         return YongJiResponse.error(ErrorCode.INVALID_REQUEST.getStatus().value(), errorMessage);
     }
 
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<YongJiResponse<String>> handleInvalidImageUpload(Exception e) {
+        log.error("Invalid image upload: {}", e.getMessage());
+        return YongJiResponse.error(ErrorCode.INVALID_PLACE_IMAGE.getStatus().value(),
+                ErrorCode.INVALID_PLACE_IMAGE.getMessage());
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<YongJiResponse<String>> handleMissingServletRequestPart(MissingServletRequestPartException e) {
+        log.error("Missing multipart part: {}", e.getMessage());
+        ErrorCode errorCode = "request".equals(e.getRequestPartName())
+                ? ErrorCode.INVALID_REQUEST : ErrorCode.INVALID_PLACE_IMAGE;
+        return YongJiResponse.error(errorCode.getStatus().value(), errorCode.getMessage());
+    }
+
     @ExceptionHandler(AuthException.class)
     public ResponseEntity<YongJiResponse<String>> handleAuthException(AuthException e) {
         log.error("AuthException: {}", e.getMessage());
@@ -94,6 +112,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(VacationException.class)
     public ResponseEntity<YongJiResponse<String>> handleVacationException(VacationException e) {
         log.error("VacationException: {}", e.getMessage());
+        return YongJiResponse.error(e.getErrorCode().getStatus().value(), e.getMessage());
+    }
+
+    @ExceptionHandler(PlaceException.class)
+    public ResponseEntity<YongJiResponse<String>> handlePlaceException(PlaceException e) {
+        log.error("PlaceException: {}", e.getMessage());
         return YongJiResponse.error(e.getErrorCode().getStatus().value(), e.getMessage());
     }
 

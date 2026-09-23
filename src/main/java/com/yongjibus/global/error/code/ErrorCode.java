@@ -44,6 +44,30 @@ public enum ErrorCode {
     // 채팅 오류
     CHAT_ROOM_FULL(HttpStatus.BAD_REQUEST, "채팅방 인원이 가득 찼습니다."),
     CHAT_MESSAGE_SAVE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "메시지 저장 중 오류 발생"),
+
+    // 장소 및 평가 오류
+    PLACE_NOT_FOUND(HttpStatus.NOT_FOUND, "장소를 찾을 수 없습니다."),
+    PLACE_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 등록된 장소입니다."),
+    PLACE_REQUEST_CONFLICT(HttpStatus.CONFLICT, "장소 등록 요청이 충돌했습니다. 다시 시도해 주세요."),
+    PLACE_NOT_APPROVED(HttpStatus.BAD_REQUEST, "승인된 장소가 아닙니다."),
+    PLACE_REQUEST_NOT_ALLOWED(HttpStatus.CONFLICT, "현재 상태에서는 장소 등록을 요청할 수 없습니다."),
+    REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "평가를 찾을 수 없습니다."),
+    INVALID_RATING(HttpStatus.BAD_REQUEST, "별점은 1점부터 5점까지 입력해야 합니다."),
+    INVALID_PLACE_CATEGORY(HttpStatus.BAD_REQUEST, "장소 카테고리와 하위 카테고리가 올바르지 않습니다."),
+    INVALID_KAKAO_PLACE(HttpStatus.BAD_REQUEST, "유효하지 않은 카카오 장소 정보입니다."),
+    PLACE_SEARCH_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "장소 검색 서비스를 사용할 수 없습니다."),
+    PLACE_SEARCH_RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS, "장소 검색 요청이 너무 많습니다."),
+    PUBLIC_ADDRESS_INVALID(HttpStatus.BAD_REQUEST, "공공주소 형식이 올바르지 않습니다."),
+    PUBLIC_ADDRESS_NOT_RESOLVED(HttpStatus.UNPROCESSABLE_ENTITY, "주소를 정확히 확인할 수 없습니다."),
+    PUBLIC_ADDRESS_SEARCH_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "공공주소 검색 서비스를 사용할 수 없습니다."),
+    PUBLIC_ADDRESS_RESOLVE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "공공주소 좌표 서비스를 사용할 수 없습니다."),
+    OPERATOR_REQUIRED(HttpStatus.FORBIDDEN, "운영자 권한이 필요합니다."),
+    INVALID_PLACE_STATUS_TRANSITION(HttpStatus.CONFLICT, "장소 상태를 변경할 수 없습니다."),
+    INVALID_REVIEW_STATUS_TRANSITION(HttpStatus.CONFLICT, "평가 상태를 변경할 수 없습니다."),
+    INVALID_PLACE_IMAGE(HttpStatus.BAD_REQUEST, "JPEG, PNG, WEBP 형식의 5MB 이하 이미지만 등록할 수 있습니다."),
+    TOO_MANY_PLACE_IMAGES(HttpStatus.BAD_REQUEST, "장소 이미지는 최대 5개까지 등록할 수 있습니다."),
+    PLACE_IMAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "장소 이미지를 찾을 수 없습니다."),
+    PLACE_IMAGE_STORAGE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "장소 이미지 저장에 실패했습니다."),
     ;
 
     private final HttpStatus status;

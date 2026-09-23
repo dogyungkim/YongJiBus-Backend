@@ -1,5 +1,6 @@
 package com.yongjibus.global.error.handler;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -16,6 +17,7 @@ import org.springframework.security.web.method.annotation.AuthenticationPrincipa
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -25,6 +27,7 @@ import com.yongjibus.chat.controller.ChatController;
 import com.yongjibus.chat.service.ChatService;
 import com.yongjibus.chat.service.FCMTokenService;
 import com.yongjibus.daytype.service.DayTypeService;
+import com.yongjibus.global.error.code.ErrorCode;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -182,5 +185,23 @@ class GlobalExceptionHandlerTest {
                 org.mockito.ArgumentMatchers.any(),
                 org.mockito.ArgumentMatchers.anyString()
         );
+    }
+
+    @Test
+    void missingPlaceRequestPartIsInvalidRequest() {
+        var response = new GlobalExceptionHandler().handleMissingServletRequestPart(
+                new MissingServletRequestPartException("request"));
+
+        assertThat(response.getStatusCode().value()).isEqualTo(ErrorCode.INVALID_REQUEST.getStatus().value());
+        assertThat(response.getBody().getData()).isEqualTo(ErrorCode.INVALID_REQUEST.getMessage());
+    }
+
+    @Test
+    void missingImagePartRemainsInvalidPlaceImage() {
+        var response = new GlobalExceptionHandler().handleMissingServletRequestPart(
+                new MissingServletRequestPartException("images"));
+
+        assertThat(response.getStatusCode().value()).isEqualTo(ErrorCode.INVALID_PLACE_IMAGE.getStatus().value());
+        assertThat(response.getBody().getData()).isEqualTo(ErrorCode.INVALID_PLACE_IMAGE.getMessage());
     }
 }

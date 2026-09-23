@@ -48,6 +48,7 @@ class FlywayMigrationTest {
         try (var connection = DriverManager.getConnection(url, "sa", "");
              var statement = connection.createStatement()) {
             statement.execute("CREATE TABLE legacy_marker (id BIGINT PRIMARY KEY)");
+            statement.execute("CREATE TABLE member (id BIGINT AUTO_INCREMENT PRIMARY KEY)");
             if (checkpointAlreadyExists) {
                 statement.execute("""
                         CREATE TABLE gmail_history_checkpoint (
@@ -68,6 +69,10 @@ class FlywayMigrationTest {
             assertThat(tables.next()).isTrue();
         }
         try (var connection = DriverManager.getConnection(url, "sa", "");
+             var tables = connection.getMetaData().getTables(null, null, "PLACE_IMAGE", null)) {
+            assertThat(tables.next()).isTrue();
+        }
+        try (var connection = DriverManager.getConnection(url, "sa", "");
                 var result = connection.createStatement().executeQuery(
                         "SELECT version, payload FROM timetable_release")) {
             assertThat(result.next()).isTrue();
@@ -78,11 +83,57 @@ class FlywayMigrationTest {
         assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("6");
     }
 
+    @Test
+    void backfillsLegacyImageRowsBeforeAddingTheThumbnailConstraint() throws Exception {
+        String url = "jdbc:h2:mem:flyway_legacy_image;MODE=MySQL;DB_CLOSE_DELAY=-1";
+        flyway(url, "4").migrate();
+        try (var connection = DriverManager.getConnection(url, "sa", "");
+                var statement = connection.createStatement()) {
+            statement.executeUpdate("""
+                    INSERT INTO member (name, username, password, email, role, is_deleted)
+                    VALUES ('maker', 'maker', 'password', 'maker@example.com', 'USER', FALSE)
+                    """);
+            statement.executeUpdate("""
+                    INSERT INTO place (display_name, address_text, latitude, longitude,
+                        juso_building_management_number, category, kakao_place_id, kakao_place_url, status)
+                    VALUES ('place', 'address', 37.2242000, 127.1876600,
+                        '1234567890123456789012345', 'CAFE', 'legacy-image-place',
+                        'https://place.map.kakao.com/legacy-image-place', 'APPROVED')
+                    """);
+            statement.executeUpdate("""
+                    INSERT INTO place_image (place_id, storage_key, sort_order)
+                    SELECT id, '00000000-0000-4000-8000-000000000001.jpg', 0
+                    FROM place WHERE kakao_place_id = 'legacy-image-place'
+                    """);
+        }
+
+        flyway(url).migrate();
+
+        try (var connection = DriverManager.getConnection(url, "sa", "");
+                var result = connection.createStatement().executeQuery("""
+                        SELECT storage_key, thumbnail_storage_key
+                        FROM place_image
+                        WHERE storage_key = '00000000-0000-4000-8000-000000000001.jpg'
+                        """)) {
+            assertThat(result.next()).isTrue();
+            assertThat(result.getString("thumbnail_storage_key"))
+                    .isEqualTo(result.getString("storage_key"));
+        }
+    }
+
     private Flyway flyway(String url) {
-        return Flyway.configure()
+        return flyway(url, null);
+    }
+
+    private Flyway flyway(String url, String target) {
+        var configuration = Flyway.configure()
                 .dataSource(url, "sa", "")
                 .baselineOnMigrate(true)
-                .baselineVersion("1")
+                .baselineVersion("1");
+        if (target != null) {
+            configuration.target(target);
+        }
+        return configuration
                 .load();
     }
 }

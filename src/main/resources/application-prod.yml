@@ -69,3 +69,21 @@ gmail:
     client-id: ${GMAIL_OAUTH_CLIENT_ID:}
     client-secret: ${GMAIL_OAUTH_CLIENT_SECRET:}
     refresh-token: ${GMAIL_OAUTH_REFRESH_TOKEN:}
+
+nearby:
+  search-center-latitude: 37.2242
+  search-center-longitude: 127.18766
+  search-radius-meters: 5000
+  selection-proof-secret: ${NEARBY_SELECTION_PROOF_SECRET}
+
+kakao:
+  rest-api-key: ${KAKAO_REST_API_KEY}
+
+juso:
+  search-confirmation-key: ${JUSO_SEARCH_API_KEY}
+  coordinate-confirmation-key: ${JUSO_COORDINATE_API_KEY}
+
+storage:
+  image:
+    local:
+      root: ${IMAGE_STORAGE_LOCAL_ROOT:/data/place-images}

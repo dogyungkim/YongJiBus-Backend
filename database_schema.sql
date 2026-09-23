@@ -20,6 +20,7 @@ CREATE TABLE member (
     username VARCHAR(10) NOT NULL UNIQUE COMMENT '닉네임',
     password VARCHAR(255) NOT NULL COMMENT '암호화된 비밀번호',
     email VARCHAR(20) NOT NULL UNIQUE COMMENT '이메일',
+    role VARCHAR(20) NOT NULL DEFAULT 'USER' COMMENT '회원 역할',
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE COMMENT '삭제 여부',
     created_at DATETIME(6) COMMENT '생성일시',
     updated_at DATETIME(6) COMMENT '수정일시'
@@ -129,7 +130,72 @@ CREATE TABLE vacation_period (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='휴가 기간';
 
 -- =============================================
--- 9. TimetableRelease 테이블 (시간표 릴리스)
+-- 9. Place 테이블 (주변 장소)
+-- =============================================
+CREATE TABLE place (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    display_name VARCHAR(100) NOT NULL COMMENT '표시 이름',
+    address_text VARCHAR(255) NOT NULL COMMENT '공공주소',
+    latitude DECIMAL(10,7) NOT NULL COMMENT 'WGS84 위도',
+    longitude DECIMAL(11,7) NOT NULL COMMENT 'WGS84 경도',
+    juso_building_management_number VARCHAR(25) NOT NULL COMMENT '건물관리번호',
+    category VARCHAR(20) NOT NULL COMMENT '카테고리',
+    subcategory VARCHAR(30) COMMENT '음식 하위 카테고리',
+    kakao_place_id VARCHAR(32) NOT NULL COMMENT '카카오 장소 ID',
+    kakao_place_url VARCHAR(255) NOT NULL COMMENT '카카오 장소 URL',
+    status VARCHAR(20) NOT NULL COMMENT '승인 상태',
+    created_by BIGINT COMMENT '등록 요청 회원',
+    approved_by BIGINT COMMENT '승인 운영자',
+    created_at DATETIME(6),
+    updated_at DATETIME(6),
+    approved_at DATETIME(6),
+    CONSTRAINT uk_place_kakao_place_id UNIQUE (kakao_place_id),
+    INDEX idx_place_status_category (status, category),
+    FOREIGN KEY (created_by) REFERENCES member(id) ON DELETE SET NULL,
+    FOREIGN KEY (approved_by) REFERENCES member(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='주변 장소';
+
+-- =============================================
+-- 10. PlaceImage 테이블 (장소 이미지)
+-- =============================================
+CREATE TABLE place_image (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    place_id BIGINT NOT NULL,
+    storage_key VARCHAR(255) NOT NULL COMMENT '저장소 객체 키',
+    thumbnail_storage_key VARCHAR(255) NOT NULL COMMENT '썸네일 저장소 객체 키',
+    sort_order INT NOT NULL COMMENT '표시 순서(0~4)',
+    created_at DATETIME(6),
+    CONSTRAINT uk_place_image_storage_key UNIQUE (storage_key),
+    CONSTRAINT uk_place_image_thumbnail_storage_key UNIQUE (thumbnail_storage_key),
+    CONSTRAINT uk_place_image_sort_order UNIQUE (place_id, sort_order),
+    CONSTRAINT chk_place_image_sort_order CHECK (sort_order BETWEEN 0 AND 4),
+    FOREIGN KEY (place_id) REFERENCES place(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='장소 이미지';
+
+-- =============================================
+-- 11. PlaceReview 테이블 (장소 평가)
+-- =============================================
+CREATE TABLE place_review (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    place_id BIGINT NOT NULL,
+    member_id BIGINT NOT NULL,
+    rating INT NOT NULL COMMENT '1~5점',
+    comment VARCHAR(120) NOT NULL COMMENT '한줄평',
+    status VARCHAR(20) NOT NULL COMMENT '승인 상태',
+    approved_by BIGINT COMMENT '승인 운영자',
+    created_at DATETIME(6),
+    updated_at DATETIME(6),
+    approved_at DATETIME(6),
+    CONSTRAINT uk_place_review_member UNIQUE (place_id, member_id),
+    CONSTRAINT chk_place_review_rating CHECK (rating BETWEEN 1 AND 5),
+    INDEX idx_place_review_place_status (place_id, status),
+    FOREIGN KEY (place_id) REFERENCES place(id) ON DELETE CASCADE,
+    FOREIGN KEY (member_id) REFERENCES member(id) ON DELETE CASCADE,
+    FOREIGN KEY (approved_by) REFERENCES member(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='장소 평가';
+
+-- =============================================
+-- 12. TimetableRelease 테이블 (시간표 릴리스)
 -- =============================================
 CREATE TABLE timetable_release (
     version BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '릴리스 버전',
