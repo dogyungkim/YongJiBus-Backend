@@ -83,7 +83,9 @@ public class TimetableService {
         Set<Integer> ids = ids(rows, TimetablePayloadDTO.GiheungWeekdayTime::id);
         for (TimetablePayloadDTO.GiheungWeekdayTime row : rows) {
             requireId(row.id(), ids);
-            requireTime(row.startTime());
+            if (!"-".equals(row.startTime())) {
+                requireTime(row.startTime());
+            }
             requireTime(row.predTime());
             requireTime(row.schoolArrival());
             if (row.runCount() == null || row.runCount() < 1) {

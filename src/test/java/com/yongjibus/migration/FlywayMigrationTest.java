@@ -14,14 +14,16 @@ import org.junit.jupiter.params.provider.ValueSource;
 class FlywayMigrationTest {
 
     @Test
-    void seedsEveryInitialTimetableRow() throws Exception {
+    void publishesTheOfficialGiheungTimesInANewRelease() throws Exception {
         Flyway flyway = flyway("jdbc:h2:mem:flyway_timetable_seed;MODE=MySQL;DB_CLOSE_DELAY=-1");
 
         flyway.migrate();
 
         try (var connection = DriverManager.getConnection("jdbc:h2:mem:flyway_timetable_seed;MODE=MySQL;DB_CLOSE_DELAY=-1", "sa", "");
-                var result = connection.createStatement().executeQuery("SELECT payload FROM timetable_release")) {
+                var result = connection.createStatement().executeQuery(
+                        "SELECT version, payload FROM timetable_release ORDER BY version DESC")) {
             assertThat(result.next()).isTrue();
+            assertThat(result.getLong("version")).isEqualTo(2L);
             JsonNode payload = new ObjectMapper().readTree(result.getString("payload"));
             assertThat(payload.get("myongjiWeekday")).hasSize(64);
             assertThat(payload.get("myongjiWeekend")).hasSize(10);
@@ -29,6 +31,11 @@ class FlywayMigrationTest {
             assertThat(payload.get("myongjiWeekday").get(0).get("type").asText()).isEqualTo("명지대역");
             assertThat(payload.get("myongjiWeekday").get(63).get("startTime").asText()).isEqualTo("20:00");
             assertThat(payload.get("giheungWeekday").get(13).get("schoolArrival").asText()).isEqualTo("19:45");
+            assertThat(payload.get("giheungWeekday").get(0).get("startTime").asText()).isEqualTo("-");
+            assertThat(payload.get("giheungWeekday").get(1).get("startTime").asText()).isEqualTo("-");
+            assertThat(result.next()).isTrue();
+            assertThat(result.getLong("version")).isEqualTo(1L);
+            assertThat(result.next()).isFalse();
         }
     }
 
@@ -38,7 +45,7 @@ class FlywayMigrationTest {
 
         flyway.migrate();
 
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("6");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("7");
     }
 
     @ParameterizedTest
@@ -69,13 +76,13 @@ class FlywayMigrationTest {
         }
         try (var connection = DriverManager.getConnection(url, "sa", "");
                 var result = connection.createStatement().executeQuery(
-                        "SELECT version, payload FROM timetable_release")) {
+                        "SELECT version, payload FROM timetable_release ORDER BY version DESC")) {
             assertThat(result.next()).isTrue();
-            assertThat(result.getLong("version")).isEqualTo(1L);
+            assertThat(result.getLong("version")).isEqualTo(2L);
             assertThat(result.getString("payload")).contains("\"myongjiWeekday\"")
                     .contains("\"giheungWeekday\"");
         }
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("6");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("7");
     }
 
     private Flyway flyway(String url) {

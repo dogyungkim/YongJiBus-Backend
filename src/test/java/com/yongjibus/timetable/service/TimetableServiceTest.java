@@ -158,6 +158,6 @@ class TimetableServiceTest {
         return new TimetablePayloadDTO(
                 List.of(new TimetablePayloadDTO.MyongjiWeekdayTime(0, "명지대역", "8:00", "8:15")),
                 List.of(new TimetablePayloadDTO.MyongjiWeekendTime(0, "8:20", "8:45")),
-                List.of(new TimetablePayloadDTO.GiheungWeekdayTime(0, "8:00", "8:15", "8:30", 1)));
+                List.of(new TimetablePayloadDTO.GiheungWeekdayTime(0, "-", "8:15", "8:30", 1)));
     }
 }
