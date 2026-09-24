@@ -19,6 +19,7 @@ import com.yongjibus.global.error.exception.AuthException;
 import com.yongjibus.global.error.exception.ChatException;
 import com.yongjibus.global.error.exception.DateInfoNotFoundException;
 import com.yongjibus.global.error.exception.MemberException;
+import com.yongjibus.global.error.exception.TimetableException;
 import com.yongjibus.global.error.exception.VacationException;
 
 import lombok.extern.slf4j.Slf4j;
@@ -93,6 +94,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(VacationException.class)
     public ResponseEntity<YongJiResponse<String>> handleVacationException(VacationException e) {
         log.error("VacationException: {}", e.getMessage());
+        return YongJiResponse.error(e.getErrorCode().getStatus().value(), e.getMessage());
+    }
+
+    @ExceptionHandler(TimetableException.class)
+    public ResponseEntity<YongJiResponse<String>> handleTimetableException(TimetableException e) {
+        log.error("TimetableException: {}", e.getMessage());
         return YongJiResponse.error(e.getErrorCode().getStatus().value(), e.getMessage());
     }
 
