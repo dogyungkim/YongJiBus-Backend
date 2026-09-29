@@ -38,7 +38,7 @@ class FlywayMigrationTest {
 
         flyway.migrate();
 
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("6");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("7");
     }
 
     @ParameterizedTest
@@ -49,6 +49,16 @@ class FlywayMigrationTest {
              var statement = connection.createStatement()) {
             statement.execute("CREATE TABLE legacy_marker (id BIGINT PRIMARY KEY)");
             statement.execute("CREATE TABLE member (id BIGINT AUTO_INCREMENT PRIMARY KEY)");
+            statement.execute("""
+                    CREATE TABLE fcmtoken (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        token VARCHAR(255) NOT NULL,
+                        member_id BIGINT NOT NULL,
+                        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                        last_updated_at TIMESTAMP(6),
+                        CONSTRAINT uk_fcmtoken_member UNIQUE (member_id)
+                    )
+                    """);
             if (checkpointAlreadyExists) {
                 statement.execute("""
                         CREATE TABLE gmail_history_checkpoint (
@@ -80,7 +90,7 @@ class FlywayMigrationTest {
             assertThat(result.getString("payload")).contains("\"myongjiWeekday\"")
                     .contains("\"giheungWeekday\"");
         }
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("6");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("7");
     }
 
     @Test

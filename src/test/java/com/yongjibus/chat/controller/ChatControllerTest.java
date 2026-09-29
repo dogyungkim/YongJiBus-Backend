@@ -2,6 +2,7 @@ package com.yongjibus.chat.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -32,6 +33,8 @@ import com.yongjibus.chat.domain.ChatRoom;
 import com.yongjibus.chat.domain.FCMToken;
 import com.yongjibus.chat.service.ChatService;
 import com.yongjibus.chat.service.FCMTokenService;
+import com.yongjibus.global.error.code.ErrorCode;
+import com.yongjibus.global.error.exception.ChatException;
 import com.yongjibus.member.domain.Member;
 import com.yongjibus.support.ControllerTestSupport;
 
@@ -139,10 +142,10 @@ class ChatControllerTest extends ControllerTestSupport {
     }
 
     @Test
-    @DisplayName("FCM 토큰 등록은 현재 사용자의 토큰을 저장한다")
+    @DisplayName("FCM 토큰 공개 등록은 토큰만 전달한다")
     void registerFcmToken_ShouldDelegateToService() throws Exception {
+        clearAuthentication();
         mockMvc.perform(post("/chat/fcm-token")
-                        .principal(authentication)
                         .contentType(APPLICATION_JSON)
                         .content("""
                                 {"token":"fcm-token"}
@@ -150,6 +153,74 @@ class ChatControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value("FCM 토큰 등록 성공"));
 
-        verify(fcmTokenService).saveToken(member, "fcm-token");
+        verify(fcmTokenService).registerAnonymousToken("fcm-token");
+    }
+
+    @Test
+    void legacyAuthenticatedRegistrationStillBindsTheMember() throws Exception {
+        mockMvc.perform(post("/chat/fcm-token")
+                        .principal(authentication)
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"token\":\"fcm-token\"}"))
+                .andExpect(status().isOk());
+
+        verify(fcmTokenService).bindToken(member, "fcm-token");
+    }
+
+    @Test
+    void legacyBodylessRemovalUnbindsTheMember() throws Exception {
+        mockMvc.perform(post("/chat/fcm-token/remove").principal(authentication))
+                .andExpect(status().isOk());
+
+        verify(fcmTokenService).unbindAllTokens(member);
+    }
+
+    @Test
+    void deactivateFcmToken_UsesCurrentMemberOrGuest() throws Exception {
+        mockMvc.perform(post("/chat/fcm-token/deactivate")
+                        .principal(authentication)
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"token\":\"fcm-token\"}"))
+                .andExpect(status().isOk());
+        verify(fcmTokenService).deactivateToken(member, "fcm-token");
+
+        clearAuthentication();
+        mockMvc.perform(post("/chat/fcm-token/deactivate")
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"token\":\"guest-token\"}"))
+                .andExpect(status().isOk());
+        verify(fcmTokenService).deactivateToken(null, "guest-token");
+    }
+
+    @Test
+    @DisplayName("로그인 사용자는 본인 토큰만 bind 또는 unbind 요청한다")
+    void bindAndUnbindFcmToken_ShouldUseAuthenticatedMember() throws Exception {
+        mockMvc.perform(post("/chat/fcm-token/bind")
+                        .principal(authentication)
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"token\":\"fcm-token\"}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/chat/fcm-token/unbind")
+                        .principal(authentication)
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"token\":\"fcm-token\"}"))
+                .andExpect(status().isOk());
+
+        verify(fcmTokenService).bindToken(member, "fcm-token");
+        verify(fcmTokenService).unbindToken(member, "fcm-token");
+    }
+
+    @Test
+    @DisplayName("다른 회원이 소유한 토큰 bind는 409를 반환한다")
+    void bindFcmToken_WhenOwnedByAnotherMember_ShouldReturnConflict() throws Exception {
+        doThrow(new ChatException(ErrorCode.FCM_TOKEN_CONFLICT))
+                .when(fcmTokenService).bindToken(member, "fcm-token");
+
+        mockMvc.perform(post("/chat/fcm-token/bind")
+                        .principal(authentication)
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"token\":\"fcm-token\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409));
     }
 }

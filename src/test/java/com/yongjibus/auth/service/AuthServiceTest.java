@@ -27,6 +27,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.yongjibus.auth.email.EmailTokenService;
 import com.yongjibus.auth.email.EmailBounceService;
 import com.yongjibus.auth.email.EmailPendingRepository;
+import com.yongjibus.chat.service.FCMTokenService;
 import com.yongjibus.global.error.code.ErrorCode;
 import com.yongjibus.global.error.exception.AuthException;
 import com.yongjibus.global.infra.email.EmailService;
@@ -61,6 +62,9 @@ class AuthServiceTest {
 
     @Mock
     private JwtService jwtService;
+
+    @Mock
+    private FCMTokenService fcmTokenService;
 
     @Mock
     private MemberService memberService;
@@ -228,6 +232,27 @@ class AuthServiceTest {
         verify(jwtService).deleteRefreshToken(TEST_EMAIL);
         // Member의 delete 메서드가 호출되었는지 확인하기 어려우므로 상태 변경 확인
         // ReflectionTestUtils를 사용하여 private 필드 확인 가능
+    }
+
+    @Test
+    @DisplayName("로그아웃은 현재 기기 토큰 연결을 해제하고 refresh token을 삭제한다")
+    void logoutUnbindsOnlyProvidedDeviceToken() {
+        authService.logout(testMember, "fcm-token");
+
+        InOrder order = inOrder(fcmTokenService, jwtService);
+        order.verify(fcmTokenService).unbindToken(testMember, "fcm-token");
+        order.verify(jwtService).deleteRefreshToken(TEST_EMAIL);
+        verify(fcmTokenService, never()).unbindAllTokens(testMember);
+    }
+
+    @Test
+    @DisplayName("회원 탈퇴는 모든 기기의 FCM 연결을 해제한다")
+    void signoutUnbindsAllTokens() {
+        authService.signoutMember(testMember);
+
+        verify(fcmTokenService).unbindAllTokens(testMember);
+        verify(memberService).saveMember(testMember);
+        assertThat(testMember.getIsDeleted()).isTrue();
     }
 
     @Test

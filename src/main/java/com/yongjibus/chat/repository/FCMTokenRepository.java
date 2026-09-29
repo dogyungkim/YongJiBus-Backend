@@ -4,15 +4,21 @@ import com.yongjibus.chat.domain.FCMToken;
 import com.yongjibus.member.domain.Member;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import jakarta.persistence.LockModeType;
 
-import java.util.Optional;
+import java.util.List;
 
 @Repository
 public interface FCMTokenRepository extends JpaRepository<FCMToken, Long> {
-    Optional<FCMToken> findByMember(Member member);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select token from FCMToken token where token.token = :token")
+    List<FCMToken> findAllByTokenForUpdate(@Param("token") String token);
 
-    Optional<FCMToken> findByMemberAndIsActiveTrue(Member member);
+    List<FCMToken> findAllByMember(Member member);
 
-    Optional<FCMToken> findByTokenAndIsActiveTrue(String token);
+    List<FCMToken> findAllByMemberAndIsActiveTrue(Member member);
 }

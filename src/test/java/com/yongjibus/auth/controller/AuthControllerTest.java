@@ -142,6 +142,22 @@ class AuthControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value("로그아웃이 완료되었습니다."));
 
-        verify(authService).logout(member);
+        verify(authService).logout(member, null);
+    }
+
+    @Test
+    @DisplayName("로그아웃 요청에 토큰이 있으면 현재 기기 토큰을 전달한다")
+    void logoutWithCurrentDeviceToken() throws Exception {
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                new MemberDetail(member), "refresh-token", new MemberDetail(member).getAuthorities());
+        authenticate(authentication);
+
+        mockMvc.perform(delete("/auth/logout")
+                        .principal(authentication)
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"token\":\"fcm-token\"}"))
+                .andExpect(status().isOk());
+
+        verify(authService).logout(member, "fcm-token");
     }
 }

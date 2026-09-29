@@ -37,6 +37,7 @@ public enum ErrorCode {
     CHAT_ROOM_FORBIDDEN(HttpStatus.FORBIDDEN, "채팅방 참여자가 아닙니다."),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증된 사용자가 아닙니다."),
     FCM_TOKEN_NOT_FOUND(HttpStatus.NOT_FOUND, "FCM 토큰을 찾을 수 없습니다."),
+    FCM_TOKEN_CONFLICT(HttpStatus.CONFLICT, "FCM 토큰이 다른 회원에게 연결되어 있습니다."),
     
     // 웹소켓 오류
     // WebsocketStompErrorHandler 에서 사용

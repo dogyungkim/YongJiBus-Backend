@@ -181,10 +181,7 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.data").value("FCM 토큰을 입력해주세요."));
 
-        verify(fcmTokenService, never()).saveToken(
-                org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.anyString()
-        );
+        verify(fcmTokenService, never()).registerAnonymousToken(org.mockito.ArgumentMatchers.anyString());
     }
 
     @Test

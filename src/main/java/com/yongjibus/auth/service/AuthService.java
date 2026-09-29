@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.yongjibus.auth.email.EmailBounceService;
 import com.yongjibus.auth.email.EmailTokenService;
+import com.yongjibus.chat.service.FCMTokenService;
 import com.yongjibus.global.error.code.ErrorCode;
 import com.yongjibus.global.error.exception.AuthException;
 import com.yongjibus.global.infra.email.EmailService;
@@ -27,6 +28,7 @@ public class AuthService {
     private final EmailTokenService emailTokenService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final FCMTokenService fcmTokenService;
 
     private final EmailBounceService emailBounceService;
 
@@ -160,6 +162,14 @@ public class AuthService {
      */
     @Transactional
     public void logout(Member member) {
+        logout(member, null);
+    }
+
+    @Transactional
+    public void logout(Member member, String currentDeviceToken) {
+        if (currentDeviceToken != null) {
+            fcmTokenService.unbindToken(member, currentDeviceToken);
+        }
         // Redis에서 RefreshToken 삭제
         jwtService.deleteRefreshToken(member.getEmail());
     }
@@ -172,6 +182,8 @@ public class AuthService {
      */
     @Transactional
     public void signoutMember(Member member) {
+        fcmTokenService.unbindAllTokens(member);
+
         // RefreshToken 삭제 (로그아웃 처리)
         jwtService.deleteRefreshToken(member.getEmail());
 

@@ -21,11 +21,11 @@ public class FCMToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(nullable = false)
+    @Column(nullable = false, length = 512)
     private String token;
     
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id")
     private Member member;
     
     @Column(name = "is_active")
@@ -53,6 +53,16 @@ public class FCMToken {
     
     public void updateToken(String token) {
         this.token = token;
+        this.lastUpdatedAt = LocalDateTime.now();
+    }
+
+    public void bind(Member member) {
+        this.member = member;
+        this.lastUpdatedAt = LocalDateTime.now();
+    }
+
+    public void unbind() {
+        this.member = null;
         this.lastUpdatedAt = LocalDateTime.now();
     }
 } 

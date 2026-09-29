@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -20,40 +20,69 @@ public class FCMTokenService {
     private final FCMTokenRepository fcmTokenRepository;
 
     @Transactional
-    public void saveToken(Member member, String token) {
-        Optional<FCMToken> existingToken = fcmTokenRepository.findByMember(member);
-        if (existingToken.isPresent()) {
-            FCMToken fcmToken = existingToken.get();
-            fcmToken.updateToken(token);
-            fcmToken.reactivate();
-            fcmTokenRepository.save(fcmToken);
+    public void registerAnonymousToken(String token) {
+        List<FCMToken> existingTokens = fcmTokenRepository.findAllByTokenForUpdate(token);
+        if (existingTokens.stream().anyMatch(FCMToken::isActive)) {
             return;
         }
-
-        fcmTokenRepository.save(FCMToken.builder()
-                .member(member)
-                .token(token)
-                .build());
+        for (FCMToken fcmToken : existingTokens) {
+            if (fcmToken.getMember() == null) {
+                fcmToken.reactivate();
+                fcmTokenRepository.save(fcmToken);
+                return;
+            }
+        }
+        fcmTokenRepository.save(new FCMToken(token, null));
     }
 
     @Transactional
-    public void deactivateToken(FCMToken token) {
-        token.deactivate();
-        fcmTokenRepository.save(token);
-    }
-
-    @Transactional(readOnly = true)
-    public Optional<FCMToken> findActiveTokenByMember(Member member) {
-        return fcmTokenRepository.findByMemberAndIsActiveTrue(member);
-    }
-
-    @Transactional(readOnly = true)
-    public FCMToken getActiveTokenByMember(Member member) {
-        Optional<FCMToken> fcmToken = findActiveTokenByMember(member);
-        if (fcmToken.isEmpty()) {
-            throw new ChatException(ErrorCode.FCM_TOKEN_NOT_FOUND);
+    public void bindToken(Member member, String token) {
+        List<FCMToken> existingTokens = fcmTokenRepository.findAllByTokenForUpdate(token);
+        for (FCMToken fcmToken : existingTokens) {
+            if (fcmToken.isActive() && fcmToken.getMember() != null && !ownedBy(fcmToken, member)) {
+                throw new ChatException(ErrorCode.FCM_TOKEN_CONFLICT);
+            }
+        }
+        if (existingTokens.stream().anyMatch(fcmToken -> fcmToken.isActive() && ownedBy(fcmToken, member))) {
+            return;
+        }
+        for (FCMToken fcmToken : existingTokens) {
+            if (fcmToken.isActive() || fcmToken.getMember() == null || ownedBy(fcmToken, member)) {
+                fcmToken.bind(member);
+                fcmToken.reactivate();
+                fcmTokenRepository.save(fcmToken);
+                return;
+            }
         }
 
-        return fcmToken.get();
+        fcmTokenRepository.save(new FCMToken(token, member));
+    }
+
+    @Transactional(readOnly = true)
+    public List<FCMToken> findActiveTokensByMember(Member member) {
+        return fcmTokenRepository.findAllByMemberAndIsActiveTrue(member);
+    }
+
+    @Transactional
+    public void unbindToken(Member member, String token) {
+        fcmTokenRepository.findAllByTokenForUpdate(token).stream()
+                .filter(fcmToken -> ownedBy(fcmToken, member))
+                .forEach(FCMToken::unbind);
+    }
+
+    @Transactional
+    public void deactivateToken(Member member, String token) {
+        fcmTokenRepository.findAllByTokenForUpdate(token).stream()
+                .filter(fcmToken -> member == null ? fcmToken.getMember() == null : ownedBy(fcmToken, member))
+                .forEach(FCMToken::deactivate);
+    }
+
+    @Transactional
+    public void unbindAllTokens(Member member) {
+        fcmTokenRepository.findAllByMember(member).forEach(FCMToken::unbind);
+    }
+
+    private boolean ownedBy(FCMToken token, Member member) {
+        return token.getMember() != null && member.getId().equals(token.getMember().getId());
     }
 }
