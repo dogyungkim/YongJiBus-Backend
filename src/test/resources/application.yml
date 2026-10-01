@@ -58,3 +58,16 @@ jwt:
 
 gmail:
   enabled: false
+
+nearby:
+  search-center-latitude: 37.2242
+  search-center-longitude: 127.18766
+  search-radius-meters: 5000
+  selection-proof-secret: test-nearby-selection-proof-secret-1234567890
+
+kakao:
+  rest-api-key: test-kakao-key
+
+juso:
+  search-confirmation-key: test-juso-search-key
+  coordinate-confirmation-key: test-juso-coordinate-key

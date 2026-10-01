@@ -10,6 +10,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -41,6 +43,10 @@ public class Member {
     @Column(nullable = false, length = 20, unique = true)
     private String email;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private MemberRole role = MemberRole.USER;
+
     @Column(nullable = false)
     private Boolean isDeleted = false;
 
@@ -51,11 +57,12 @@ public class Member {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Member(String name, String username, String email, String password) {
+    public Member(String name, String username, String email, String password, MemberRole role) {
         this.name = name;
         this.username = username;
         this.email = email;
         this.password = password;
+        this.role = role == null ? MemberRole.USER : role;
         this.isDeleted = false;
     }
 
@@ -63,6 +70,7 @@ public class Member {
     public Member(Long id, String username) {
         this.id = id;
         this.username = username;
+        this.role = MemberRole.USER;
     }
 
     @Override

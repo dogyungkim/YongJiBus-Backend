@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.yongjibus.auth.domain.MemberDetail;
 import com.yongjibus.chat.domain.ChatRoom;
-import com.yongjibus.chat.domain.FCMToken;
 import com.yongjibus.chat.controller.dto.ChatMessageDTO;
 import com.yongjibus.chat.controller.dto.ChatMessageResponseDTO;
 import com.yongjibus.chat.controller.dto.ChatRoomCreateDTO;
@@ -206,23 +205,46 @@ public class ChatController {
     })
     @PostMapping("/fcm-token")
     public ResponseEntity<YongJiResponse<String>> registerFcmToken(
-            @Parameter(description = "현재 인증된 사용자", hidden = true)
             @AuthenticationPrincipal MemberDetail memberDetail,
             @Parameter(description = "FCM 토큰 정보", required = true)
             @Valid @RequestBody FcmTokenRegisterRequestDTO requestDTO) {
-        
-        log.info("FCM 토큰 등록 요청: 사용자 {}", memberDetail.getUsername());
-        
-        fcmTokenService.saveToken(memberDetail.getMember(), requestDTO.token());
-        
+        if (memberDetail == null) {
+            fcmTokenService.registerAnonymousToken(requestDTO.token());
+        } else {
+            fcmTokenService.bindToken(memberDetail.getMember(), requestDTO.token());
+        }
         return YongJiResponse.success("FCM 토큰 등록 성공");
     }
+
+    @Operation(summary = "로그인 기기 연결", description = "FCM 토큰을 현재 로그인한 회원에게 연결합니다.")
+    @PostMapping("/fcm-token/bind")
+    public ResponseEntity<YongJiResponse<String>> bindFcmToken(
+            @AuthenticationPrincipal MemberDetail memberDetail,
+            @Valid @RequestBody FcmTokenRegisterRequestDTO requestDTO) {
+        fcmTokenService.bindToken(memberDetail.getMember(), requestDTO.token());
+        return YongJiResponse.success("FCM 토큰 연결 성공");
+    }
+
+    @Operation(summary = "현재 기기 FCM 토큰 비활성화", description = "익명 토큰 또는 현재 회원의 토큰을 비활성화합니다.")
+    @PostMapping("/fcm-token/deactivate")
+    public ResponseEntity<YongJiResponse<String>> deactivateFcmToken(
+            @AuthenticationPrincipal MemberDetail memberDetail,
+            @Valid @RequestBody FcmTokenRegisterRequestDTO requestDTO) {
+        fcmTokenService.deactivateToken(memberDetail == null ? null : memberDetail.getMember(), requestDTO.token());
+        return YongJiResponse.success("FCM 토큰 비활성화 성공");
+    }
+
+    @Operation(summary = "로그인 기기 연결 해제", description = "현재 회원 소유의 FCM 토큰 연결을 해제합니다.")
+    @PostMapping("/fcm-token/unbind")
+    public ResponseEntity<YongJiResponse<String>> unbindFcmToken(
+            @AuthenticationPrincipal MemberDetail memberDetail,
+            @Valid @RequestBody FcmTokenRegisterRequestDTO requestDTO) {
+        fcmTokenService.unbindToken(memberDetail.getMember(), requestDTO.token());
+        return YongJiResponse.success("FCM 토큰 연결 해제 성공");
+    }
     
-    /**
-     * FCM 토큰 삭제 엔드포인트
-     * 로그아웃 시 FCM 토큰 제거
-     */
-    @Operation(summary = "FCM 토큰 삭제", description = "등록된 FCM 토큰을 비활성화하여 알림 수신을 중지합니다.")
+    /** Legacy route; callers need to include the current device token to unbind only that device. */
+    @Operation(summary = "현재 기기 FCM 연결 해제", description = "요청 본문이 있으면 현재 회원의 해당 토큰 연결을 해제합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "토큰 삭제 성공"),
         @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자", content = @Content),
@@ -230,14 +252,13 @@ public class ChatController {
     })
     @PostMapping("/fcm-token/remove")
     public ResponseEntity<YongJiResponse<String>> removeFcmToken(
-            @Parameter(description = "현재 인증된 사용자", hidden = true)
-            @AuthenticationPrincipal MemberDetail memberDetail) {
-        
-        log.info("FCM 토큰 삭제 요청: 사용자 {}", memberDetail.getUsername());
-        FCMToken token = fcmTokenService.getActiveTokenByMember(memberDetail.getMember());
-
-        fcmTokenService.deactivateToken(token);
-        
+            @AuthenticationPrincipal MemberDetail memberDetail,
+            @Valid @RequestBody(required = false) FcmTokenRegisterRequestDTO requestDTO) {
+        if (requestDTO != null) {
+            fcmTokenService.unbindToken(memberDetail.getMember(), requestDTO.token());
+        } else {
+            fcmTokenService.unbindAllTokens(memberDetail.getMember());
+        }
         return YongJiResponse.success("FCM 토큰 삭제 성공");
     }
 

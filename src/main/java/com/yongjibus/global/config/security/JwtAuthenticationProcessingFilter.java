@@ -1,18 +1,15 @@
 package com.yongjibus.global.config.security;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yongjibus.auth.service.MemberDetailService;
 import com.yongjibus.global.error.code.ErrorCode;
 import com.yongjibus.global.error.exception.AuthException;
@@ -32,20 +29,12 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final MemberDetailService memberDetailService;
+    private final SecurityErrorWriter securityErrorWriter;
 
-    private static final Set<String> EXCLUDED_ENDPOINTS = Set.of(
-        "/ws-stomp",
-        "/auth",
-        "/actuator",
-        "/vacation",
-        "/day",
-        "/arrivaltime",
-        "/timetables",
-        "/swagger-ui",
-        "/v3/api-docs",
-        "/health",
-        "/gmail/bounce"
-    );
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return "POST".equals(request.getMethod()) && "/gmail/bounce".equals(request.getRequestURI());
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -71,7 +60,7 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
                 }
             }
 
-            if (EXCLUDED_ENDPOINTS.stream().anyMatch(path::startsWith) && !path.startsWith("/auth/logout") && !path.startsWith("/auth/signout")) {
+            if (request.getHeader("Authorization") == null) {
                 filterChain.doFilter(request, response);
                 return;
             }
@@ -82,7 +71,7 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
 
             // 2. 토큰 유효성 검증
             if (!jwtService.validateAccessToken(accessToken)) {
-                throw new AuthException(ErrorCode.EXPIRED_ACCESS_TOKEN);
+                throw new AuthException(ErrorCode.INVALID_ACCESS_TOKEN);
             }
 
             // 3. 토큰 파싱
@@ -95,21 +84,13 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
 
             filterChain.doFilter(request, response);
         } catch (AuthException e) {
-            sendErrorResponse(response, e.getErrorCode());
+            SecurityContextHolder.clearContext();
+            securityErrorWriter.write(response, e.getErrorCode());
+            return;
+        } catch (UsernameNotFoundException e) {
+            SecurityContextHolder.clearContext();
+            securityErrorWriter.write(response, ErrorCode.INVALID_ACCESS_TOKEN);
             return;
         }
-    }
-
-    private void sendErrorResponse(HttpServletResponse response, ErrorCode errorCode) throws IOException {
-
-        response.setStatus(errorCode.getStatus().value());
-        response.setContentType("application/json;charset=UTF-8");
-        
-        Map<String, Object> errorDetails = new HashMap<>();
-        errorDetails.put("code", errorCode.name());
-        errorDetails.put("message", errorCode.getMessage());
-        errorDetails.put("status", errorCode.getStatus());
-        
-        response.getWriter().write(new ObjectMapper().writeValueAsString(errorDetails));
     }
 }

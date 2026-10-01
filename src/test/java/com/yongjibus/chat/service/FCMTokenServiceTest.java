@@ -1,27 +1,27 @@
 package com.yongjibus.chat.service;
 
-import com.yongjibus.chat.domain.FCMToken;
-import com.yongjibus.chat.repository.FCMTokenRepository;
-import com.yongjibus.global.error.code.ErrorCode;
-import com.yongjibus.global.error.exception.ChatException;
-import com.yongjibus.member.domain.Member;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import com.yongjibus.chat.domain.FCMToken;
+import com.yongjibus.chat.repository.FCMTokenRepository;
+import com.yongjibus.global.error.code.ErrorCode;
+import com.yongjibus.global.error.exception.ChatException;
+import com.yongjibus.member.domain.Member;
 
 @ExtendWith(MockitoExtension.class)
 class FCMTokenServiceTest {
@@ -31,173 +31,125 @@ class FCMTokenServiceTest {
 
     @InjectMocks
     private FCMTokenService fcmTokenService;
-    
-    private Member member;
 
-    @BeforeEach
-    void setUp() {
-        // Member 엔티티의 실제 빌더 패턴에 맞게 수정
-        member = Member.builder()
-                .name("테스트")
-                .username("testuser")
-                .email("test@example.com")
-                .password("password123")
-                .build();
-        
-        // 테스트를 위해 id 값 설정 (실제로는 리플렉션을 사용하거나 테스트 헬퍼 메서드를 만들어야 함)
-        // 여기서는 간단히 표현만 하고 실제 구현은 생략합니다
+    @Test
+    void publicRegistrationDoesNotChangeMemberOwnedToken() {
+        Member owner = member(1L);
+        FCMToken token = FCMToken.builder().member(owner).token("fcm-token").build();
+        given(fcmTokenRepository.findAllByTokenForUpdate("fcm-token")).willReturn(List.of(token));
+
+        fcmTokenService.registerAnonymousToken("fcm-token");
+
+        assertThat(token.getMember()).isEqualTo(owner);
+        verify(fcmTokenRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("기존 토큰이 있을 경우 토큰을 업데이트한다")
-    void saveToken_WithExistingToken_ShouldUpdateToken() {
-        // given
-        String newToken = "new-fcm-token";
-        
-        FCMToken existingToken = FCMToken.builder()
-                .member(member)
-                .token("old-fcm-token")
-                .build();
-        
-        given(fcmTokenRepository.findByMember(member))
-                .willReturn(Optional.of(existingToken));
-        given(fcmTokenRepository.save(any(FCMToken.class)))
-                .willReturn(existingToken);
+    void publicRegistrationDoesNotReactivateDuplicateOfActiveMemberToken() {
+        FCMToken memberToken = FCMToken.builder().member(member(1L)).token("fcm-token").build();
+        FCMToken duplicate = FCMToken.builder().token("fcm-token").build();
+        duplicate.deactivate();
+        given(fcmTokenRepository.findAllByTokenForUpdate("fcm-token"))
+                .willReturn(List.of(duplicate, memberToken));
 
-        // when
-        fcmTokenService.saveToken(member, newToken);
+        fcmTokenService.registerAnonymousToken("fcm-token");
 
-        // then
-        verify(fcmTokenRepository, times(1)).findByMember(member);
-        verify(fcmTokenRepository, times(1)).save(existingToken);
-        assertThat(existingToken.getToken()).isEqualTo(newToken);
-        assertThat(existingToken.isActive()).isTrue();
+        assertThat(duplicate.isActive()).isFalse();
+        verify(fcmTokenRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("기존 토큰이 없을 경우 새 토큰을 저장한다")
-    void saveToken_WithoutExistingToken_ShouldCreateNewToken() {
-        // given
-        String token = "new-fcm-token";
-        
-        given(fcmTokenRepository.findByMember(member))
-                .willReturn(Optional.empty());
+    void bindRejectsTokenOwnedByAnotherMember() {
+        given(fcmTokenRepository.findAllByTokenForUpdate("fcm-token"))
+                .willReturn(List.of(FCMToken.builder().member(member(1L)).token("fcm-token").build()));
 
-        // when
-        fcmTokenService.saveToken(member, token);
-
-        // then
-        verify(fcmTokenRepository, times(1)).findByMember(member);
-        verify(fcmTokenRepository, times(1)).save(any(FCMToken.class));
-    }
-
-    @Test
-    @DisplayName("비활성화된 동일 토큰이 있으면 새로 생성하지 않고 재활성화한다")
-    void saveToken_WithInactiveSameToken_ShouldReactivateToken() {
-        // given
-        String token = "same-fcm-token";
-
-        FCMToken existingToken = FCMToken.builder()
-                .member(member)
-                .token(token)
-                .build();
-        existingToken.deactivate();
-
-        given(fcmTokenRepository.findByMember(member))
-                .willReturn(Optional.of(existingToken));
-
-        // when
-        fcmTokenService.saveToken(member, token);
-
-        // then
-        verify(fcmTokenRepository, times(1)).findByMember(member);
-        verify(fcmTokenRepository, times(1)).save(existingToken);
-        assertThat(existingToken.isActive()).isTrue();
-    }
-
-    @Test
-    @DisplayName("토큰을 비활성화한다")
-    void deactivateToken_ShouldDeactivateToken() {
-        // given
-        FCMToken token = FCMToken.builder()
-                .member(member)
-                .token("fcm-token")
-                .build();
-        
-        given(fcmTokenRepository.save(any(FCMToken.class)))
-                .willReturn(token);
-
-        // when
-        fcmTokenService.deactivateToken(token);
-
-        // then
-        verify(fcmTokenRepository, times(1)).save(token);
-        assertThat(token.isActive()).isFalse();
-    }
-
-    @Test
-    @DisplayName("활성화된 토큰을 조회한다")
-    void getActiveTokenByMember_WithExistingToken_ShouldReturnToken() {
-        // given
-        FCMToken token = FCMToken.builder()
-                .member(member)
-                .token("fcm-token")
-                .build();
-        
-        given(fcmTokenRepository.findByMemberAndIsActiveTrue(member))
-                .willReturn(Optional.of(token));
-
-        // when
-        FCMToken result = fcmTokenService.getActiveTokenByMember(member);
-
-        // then
-        verify(fcmTokenRepository, times(1)).findByMemberAndIsActiveTrue(member);
-        assertThat(result).isEqualTo(token);
-    }
-
-    @Test
-    @DisplayName("활성화된 토큰을 Optional로 조회할 수 있다")
-    void findActiveTokenByMember_WithExistingToken_ShouldReturnOptional() {
-        // given
-        FCMToken token = FCMToken.builder()
-                .member(member)
-                .token("fcm-token")
-                .build();
-
-        given(fcmTokenRepository.findByMemberAndIsActiveTrue(member))
-                .willReturn(Optional.of(token));
-
-        // when
-        Optional<FCMToken> result = fcmTokenService.findActiveTokenByMember(member);
-
-        // then
-        assertThat(result).contains(token);
-    }
-
-    @Test
-    @DisplayName("활성화된 토큰이 없어도 Optional 조회는 예외를 던지지 않는다")
-    void findActiveTokenByMember_WithoutExistingToken_ShouldReturnEmpty() {
-        // given
-        given(fcmTokenRepository.findByMemberAndIsActiveTrue(member))
-                .willReturn(Optional.empty());
-
-        // when
-        Optional<FCMToken> result = fcmTokenService.findActiveTokenByMember(member);
-
-        // then
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    @DisplayName("활성화된 토큰이 없을 경우 예외를 발생시킨다")
-    void getActiveTokenByMember_WithoutExistingToken_ShouldThrowException() {
-        // given
-        given(fcmTokenRepository.findByMemberAndIsActiveTrue(member))
-                .willReturn(Optional.empty());
-
-        // when & then
-        assertThatThrownBy(() -> fcmTokenService.getActiveTokenByMember(member))
+        assertThatThrownBy(() -> fcmTokenService.bindToken(member(2L), "fcm-token"))
                 .isInstanceOf(ChatException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FCM_TOKEN_NOT_FOUND);
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FCM_TOKEN_CONFLICT);
     }
-} 
+
+    @Test
+    void anonymousTokenCanBindUnbindAndRegisterAgain() {
+        Member owner = member(1L);
+        FCMToken token = FCMToken.builder().token("fcm-token").build();
+        token.deactivate();
+        given(fcmTokenRepository.findAllByTokenForUpdate("fcm-token"))
+                .willReturn(List.of(token), List.of(token), List.of(token), List.of(token));
+
+        fcmTokenService.registerAnonymousToken("fcm-token");
+        assertThat(token.isActive()).isTrue();
+        fcmTokenService.bindToken(owner, "fcm-token");
+        assertThat(token.getMember()).isEqualTo(owner);
+        fcmTokenService.unbindToken(owner, "fcm-token");
+        assertThat(token.getMember()).isNull();
+        fcmTokenService.registerAnonymousToken("fcm-token");
+
+        assertThat(token.isActive()).isTrue();
+        assertThat(token.getMember()).isNull();
+        verify(fcmTokenRepository, times(2)).save(token);
+    }
+
+    @Test
+    void unbindOnlyClearsTheCurrentMemberAndDeletionClearsEveryDevice() {
+        Member owner = member(1L);
+        Member other = member(2L);
+        FCMToken first = FCMToken.builder().member(owner).token("first").build();
+        FCMToken second = FCMToken.builder().member(owner).token("second").build();
+        given(fcmTokenRepository.findAllByTokenForUpdate("first")).willReturn(List.of(first), List.of(first));
+        given(fcmTokenRepository.findAllByMember(owner)).willReturn(List.of(first, second));
+
+        fcmTokenService.unbindToken(other, "first");
+        assertThat(first.getMember()).isEqualTo(owner);
+
+        fcmTokenService.unbindToken(owner, "first");
+        assertThat(first.getMember()).isNull();
+
+        fcmTokenService.unbindAllTokens(owner);
+        assertThat(second.getMember()).isNull();
+    }
+
+    @Test
+    void unbindMatchesMemberIdAcrossDifferentEntityInstances() {
+        FCMToken token = FCMToken.builder().member(member(1L)).token("fcm-token").build();
+        given(fcmTokenRepository.findAllByTokenForUpdate("fcm-token")).willReturn(List.of(token));
+
+        fcmTokenService.unbindToken(member(1L), "fcm-token");
+
+        assertThat(token.getMember()).isNull();
+    }
+
+    @Test
+    void deactivationOnlyAffectsTheTokenOwnerAndBindingReactivatesIt() {
+        Member owner = member(1L);
+        FCMToken token = FCMToken.builder().member(owner).token("fcm-token").build();
+        given(fcmTokenRepository.findAllByTokenForUpdate("fcm-token")).willReturn(List.of(token));
+
+        fcmTokenService.deactivateToken(null, "fcm-token");
+        fcmTokenService.deactivateToken(member(2L), "fcm-token");
+        assertThat(token.isActive()).isTrue();
+
+        fcmTokenService.deactivateToken(owner, "fcm-token");
+        assertThat(token.isActive()).isFalse();
+
+        fcmTokenService.bindToken(owner, "fcm-token");
+        assertThat(token.isActive()).isTrue();
+        assertThat(token.getMember()).isEqualTo(owner);
+    }
+
+    @Test
+    void guestCanDeactivateAndReactivateItsOwnToken() {
+        FCMToken token = FCMToken.builder().token("guest-token").build();
+        given(fcmTokenRepository.findAllByTokenForUpdate("guest-token")).willReturn(List.of(token));
+
+        fcmTokenService.deactivateToken(null, "guest-token");
+        assertThat(token.isActive()).isFalse();
+        fcmTokenService.registerAnonymousToken("guest-token");
+        assertThat(token.isActive()).isTrue();
+    }
+
+    private static Member member(Long id) {
+        Member member = Member.builder().username("member-" + id).build();
+        ReflectionTestUtils.setField(member, "id", id);
+        return member;
+    }
+}

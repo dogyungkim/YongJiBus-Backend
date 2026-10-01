@@ -20,6 +20,7 @@ import com.yongjibus.auth.controller.dto.SignupRequestDTO;
 import com.yongjibus.auth.controller.dto.UsernameCheckResponseDTO;
 import com.yongjibus.auth.domain.MemberDetail;
 import com.yongjibus.auth.controller.dto.AuthTokenDTO;
+import com.yongjibus.chat.controller.dto.FcmTokenRegisterRequestDTO;
 import com.yongjibus.auth.service.AuthService;
 import com.yongjibus.global.common.response.YongJiResponse;
 
@@ -133,8 +134,9 @@ public class AuthController {
     @DeleteMapping("/logout")
     public ResponseEntity<YongJiResponse<String>> logout(
             @Parameter(description = "현재 인증된 사용자", hidden = true)
-            @AuthenticationPrincipal MemberDetail memberDetail) {
-        authService.logout(memberDetail.getMember());
+            @AuthenticationPrincipal MemberDetail memberDetail,
+            @Valid @RequestBody(required = false) FcmTokenRegisterRequestDTO requestDTO) {
+        authService.logout(memberDetail.getMember(), requestDTO == null ? null : requestDTO.token());
         return YongJiResponse.success("로그아웃이 완료되었습니다.");
     }
     
