@@ -12,6 +12,8 @@ WHERE token IN (
 
 ALTER TABLE fcmtoken MODIFY token VARCHAR(512) NOT NULL;
 ALTER TABLE fcmtoken MODIFY member_id BIGINT NULL;
+-- Keep the FK's supporting index in place while removing the old unique index.
+ALTER TABLE fcmtoken ADD INDEX idx_fcmtoken_member (member_id);
 ALTER TABLE fcmtoken DROP INDEX uk_fcmtoken_member;
 ALTER TABLE fcmtoken ADD COLUMN active_token VARCHAR(512) GENERATED ALWAYS AS (
     CASE WHEN is_active THEN token ELSE NULL END

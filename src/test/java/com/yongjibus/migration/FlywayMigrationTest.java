@@ -56,9 +56,13 @@ class FlywayMigrationTest {
                         member_id BIGINT NOT NULL,
                         is_active BOOLEAN NOT NULL DEFAULT TRUE,
                         last_updated_at TIMESTAMP(6),
-                        CONSTRAINT uk_fcmtoken_member UNIQUE (member_id)
+                        CONSTRAINT uk_fcmtoken_member UNIQUE (member_id),
+                        CONSTRAINT fk_fcmtoken_member FOREIGN KEY (member_id)
+                            REFERENCES member(id) ON DELETE CASCADE
                     )
                     """);
+            statement.execute("INSERT INTO member (id) VALUES (1)");
+            statement.execute("INSERT INTO fcmtoken (id, token, member_id) VALUES (1, 'legacy-token', 1)");
             if (checkpointAlreadyExists) {
                 statement.execute("""
                         CREATE TABLE gmail_history_checkpoint (
@@ -89,6 +93,25 @@ class FlywayMigrationTest {
             assertThat(result.getLong("version")).isEqualTo(1L);
             assertThat(result.getString("payload")).contains("\"myongjiWeekday\"")
                     .contains("\"giheungWeekday\"");
+        }
+        try (var connection = DriverManager.getConnection(url, "sa", "");
+                var statement = connection.createStatement()) {
+            try (var result = statement.executeQuery(
+                    "SELECT token, member_id FROM fcmtoken WHERE id = 1")) {
+                assertThat(result.next()).isTrue();
+                assertThat(result.getString("token")).isEqualTo("legacy-token");
+                assertThat(result.getLong("member_id")).isEqualTo(1L);
+            }
+            statement.executeUpdate("INSERT INTO fcmtoken (token, member_id) VALUES ('second-token', 1)");
+            try (var result = statement.executeQuery("SELECT COUNT(*) FROM fcmtoken WHERE member_id = 1")) {
+                assertThat(result.next()).isTrue();
+                assertThat(result.getInt(1)).isEqualTo(2);
+            }
+            statement.executeUpdate("DELETE FROM member WHERE id = 1");
+            try (var result = statement.executeQuery("SELECT COUNT(*) FROM fcmtoken")) {
+                assertThat(result.next()).isTrue();
+                assertThat(result.getInt(1)).isZero();
+            }
         }
         assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("7");
     }
