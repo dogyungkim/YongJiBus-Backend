@@ -67,6 +67,15 @@ public class PlaceController {
         return YongJiResponse.success(placeService.searchKakao(principal.getMember(), query));
     }
 
+    @GetMapping("/kakao-viewport")
+    public ResponseEntity<YongJiResponse<List<KakaoSearchItem>>> searchViewport(
+            @RequestParam double minLatitude, @RequestParam double minLongitude,
+            @RequestParam double maxLatitude, @RequestParam double maxLongitude,
+            @AuthenticationPrincipal MemberDetail principal) {
+        return YongJiResponse.success(placeService.searchViewport(principal.getMember(),
+                minLatitude, minLongitude, maxLatitude, maxLongitude));
+    }
+
     @PostMapping(value = "/requests", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<YongJiResponse<PlaceRequestResult>> requestPlace(
             @Valid @RequestBody PlaceRequest request, @AuthenticationPrincipal MemberDetail principal) {

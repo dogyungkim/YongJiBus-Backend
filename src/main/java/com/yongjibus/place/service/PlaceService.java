@@ -1,6 +1,8 @@
 package com.yongjibus.place.service;
 
 import java.time.Duration;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -55,6 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class PlaceService {
+    private static final int MAX_KAKAO_SEARCH_RESULTS = 30;
     private final PlaceRepository placeRepository;
     private final PlaceReviewRepository reviewRepository;
     private final KakaoLocalClient kakaoLocalClient;
@@ -109,22 +112,47 @@ public class PlaceService {
         if (query.length() < 2 || query.length() > 50) {
             throw new PlaceException(ErrorCode.INVALID_REQUEST);
         }
-        if (searchCounts.asMap().computeIfAbsent(member.getId(), ignored -> new AtomicInteger()).incrementAndGet() > 10) {
-            count("nearby.kakao.search.rate_limited");
-            throw new PlaceException(ErrorCode.PLACE_SEARCH_RATE_LIMITED);
-        }
+        checkSearchRate(member);
         try {
             List<KakaoPlace> results = kakaoLocalClient.search(query);
-            Map<String, Place> registered = results.isEmpty() ? Map.of() : placeRepository.findByKakaoPlaceIdIn(
-                    results.stream().map(KakaoPlace::id).toList()).stream()
-                    .collect(Collectors.toMap(Place::getKakaoPlaceId, place -> place));
-            List<KakaoSearchItem> response = results.stream().map(result -> {
-                Place place = registered.get(result.id());
-                return new KakaoSearchItem(result.id(), result.placeName(), result.categoryName(),
-                        result.roadAddressName(), result.addressName(), result.latitudeValue(), result.longitudeValue(),
-                        result.placeUrl(), place == null ? null : place.getId(), publicRegistrationStatus(place),
-                        proofService.issue(member.getId(), result));
-            }).toList();
+            List<KakaoSearchItem> response = mapKakaoSearchResults(member, results);
+            count("nearby.kakao.search.success");
+            return response;
+        } catch (RuntimeException e) {
+            count("nearby.kakao.search.failure");
+            throw e;
+        }
+    }
+
+    public List<KakaoSearchItem> searchViewport(Member member, double minLatitude, double minLongitude,
+            double maxLatitude, double maxLongitude) {
+        if (!validCoordinates(minLatitude, minLongitude) || !validCoordinates(maxLatitude, maxLongitude)
+                || minLatitude >= maxLatitude || minLongitude >= maxLongitude
+                || !kakaoLocalClient.isViewportWithinSearchArea(
+                        minLatitude, minLongitude, maxLatitude, maxLongitude)) {
+            throw new PlaceException(ErrorCode.INVALID_REQUEST);
+        }
+        checkSearchRate(member);
+        try {
+            double centerLatitude = (minLatitude + maxLatitude) / 2;
+            double centerLongitude = (minLongitude + maxLongitude) / 2;
+            Map<String, KakaoPlace> uniqueResults = new LinkedHashMap<>();
+            for (KakaoPlace result : kakaoLocalClient.searchViewport(
+                    minLatitude, minLongitude, maxLatitude, maxLongitude)) {
+                double latitude = result.latitudeValue().doubleValue();
+                double longitude = result.longitudeValue().doubleValue();
+                if (kakaoLocalClient.isWithinCampusArea(latitude, longitude)
+                        && withinViewport(latitude, longitude, minLatitude, minLongitude, maxLatitude, maxLongitude)) {
+                    uniqueResults.putIfAbsent(result.id(), result);
+                }
+            }
+            List<KakaoPlace> results = uniqueResults.values().stream()
+                    .sorted(Comparator.comparingDouble(result -> KakaoLocalClient.distanceMeters(
+                            centerLatitude, centerLongitude,
+                            result.latitudeValue().doubleValue(), result.longitudeValue().doubleValue())))
+                    .limit(MAX_KAKAO_SEARCH_RESULTS)
+                    .toList();
+            List<KakaoSearchItem> response = mapKakaoSearchResults(member, results);
             count("nearby.kakao.search.success");
             return response;
         } catch (RuntimeException e) {
@@ -380,6 +408,37 @@ public class PlaceService {
             case APPROVED -> "APPROVED";
             case REJECTED, HIDDEN -> "UNAVAILABLE";
         };
+    }
+
+    private void checkSearchRate(Member member) {
+        if (searchCounts.asMap().computeIfAbsent(member.getId(), ignored -> new AtomicInteger()).incrementAndGet() > 10) {
+            count("nearby.kakao.search.rate_limited");
+            throw new PlaceException(ErrorCode.PLACE_SEARCH_RATE_LIMITED);
+        }
+    }
+
+    private List<KakaoSearchItem> mapKakaoSearchResults(Member member, List<KakaoPlace> results) {
+        Map<String, Place> registered = results.isEmpty() ? Map.of() : placeRepository.findByKakaoPlaceIdIn(
+                results.stream().map(KakaoPlace::id).toList()).stream()
+                .collect(Collectors.toMap(Place::getKakaoPlaceId, place -> place));
+        return results.stream().map(result -> {
+            Place place = registered.get(result.id());
+            return new KakaoSearchItem(result.id(), result.placeName(), result.categoryName(),
+                    result.roadAddressName(), result.addressName(), result.latitudeValue(), result.longitudeValue(),
+                    result.placeUrl(), place == null ? null : place.getId(), publicRegistrationStatus(place),
+                    proofService.issue(member.getId(), result));
+        }).toList();
+    }
+
+    private static boolean validCoordinates(double latitude, double longitude) {
+        return Double.isFinite(latitude) && latitude >= -90 && latitude <= 90
+                && Double.isFinite(longitude) && longitude >= -180 && longitude <= 180;
+    }
+
+    private static boolean withinViewport(double latitude, double longitude,
+            double minLatitude, double minLongitude, double maxLatitude, double maxLongitude) {
+        return latitude >= minLatitude && latitude <= maxLatitude
+                && longitude >= minLongitude && longitude <= maxLongitude;
     }
 
     private static boolean knownRequestCollision(Throwable error) {

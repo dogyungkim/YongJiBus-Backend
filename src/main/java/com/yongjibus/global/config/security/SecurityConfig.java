@@ -54,6 +54,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/timetables/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/place-images/**").permitAll()
                 .requestMatchers("/admin/**").hasRole("OPERATOR")
+                .requestMatchers(HttpMethod.GET, "/places/kakao-viewport").authenticated()
                 .requestMatchers(HttpMethod.GET, "/places/kakao-search").authenticated()
                 .requestMatchers(HttpMethod.GET, "/places", "/places/{placeId}", "/places/{placeId}/reviews").permitAll()
                 .requestMatchers("/places/**").authenticated()

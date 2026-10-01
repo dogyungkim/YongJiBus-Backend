@@ -5,10 +5,13 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.nio.charset.StandardCharsets;
+import java.math.BigDecimal;
+import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +29,7 @@ import com.yongjibus.global.error.code.ErrorCode;
 import com.yongjibus.member.domain.Member;
 import com.yongjibus.place.controller.dto.PlaceDTOs.PlaceRequest;
 import com.yongjibus.place.controller.dto.PlaceDTOs.PlaceRequestResult;
+import com.yongjibus.place.controller.dto.PlaceDTOs.KakaoSearchItem;
 import com.yongjibus.place.domain.PlaceCategory;
 import com.yongjibus.place.domain.PlaceStatus;
 import com.yongjibus.place.domain.ReviewStatus;
@@ -115,6 +119,26 @@ class PlaceControllerTest extends ControllerTestSupport {
 
         verify(placeService).requestPlace(member, request);
         verifyNoInteractions(placeImageService);
+    }
+
+    @Test
+    void viewportSearchReturnsExistingKakaoPlaceResponseForAuthenticatedMember() throws Exception {
+        KakaoSearchItem item = new KakaoSearchItem("123", "카페", "음식점 > 카페", "도로명", "지번",
+                new BigDecimal("37.2242"), new BigDecimal("127.18766"),
+                "https://place.map.kakao.com/123", null, null, "signed-proof");
+        when(placeService.searchViewport(member, 37.223, 127.186, 37.225, 127.189)).thenReturn(List.of(item));
+
+        mockMvc.perform(get("/places/kakao-viewport")
+                        .param("minLatitude", "37.223")
+                        .param("minLongitude", "127.186")
+                        .param("maxLatitude", "37.225")
+                        .param("maxLongitude", "127.189"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data[0].placeId").value("123"))
+                .andExpect(jsonPath("$.data[0].selectionProof").value("signed-proof"));
+
+        verify(placeService).searchViewport(member, 37.223, 127.186, 37.225, 127.189);
     }
 
     private UsernamePasswordAuthenticationToken auth() {

@@ -10,13 +10,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.yongjibus.auth.domain.MemberDetail;
 import com.yongjibus.member.domain.Member;
 import com.yongjibus.member.domain.MemberRole;
+import com.yongjibus.place.client.KakaoLocalClient;
+
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -24,6 +29,9 @@ import com.yongjibus.member.domain.MemberRole;
 class PlaceSecurityIntegrationTest {
     @Autowired
     MockMvc mockMvc;
+
+    @MockBean
+    KakaoLocalClient kakaoLocalClient;
 
     @Test
     void publicPlacesCanBeReadWithoutToken() throws Exception {
@@ -44,6 +52,37 @@ class PlaceSecurityIntegrationTest {
         mockMvc.perform(get("/places/kakao-search").param("query", "카페"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401));
+    }
+
+    @Test
+    void kakaoViewportRequiresAuthentication() throws Exception {
+        mockMvc.perform(get("/places/kakao-viewport")
+                        .param("minLatitude", "37.223")
+                        .param("minLongitude", "127.186")
+                        .param("maxLatitude", "37.225")
+                        .param("maxLongitude", "127.189"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401));
+    }
+
+    @Test
+    void authenticatedMemberCanSearchKakaoViewport() throws Exception {
+        when(kakaoLocalClient.isViewportWithinSearchArea(37.223, 127.186, 37.225, 127.189)).thenReturn(true);
+        when(kakaoLocalClient.searchViewport(37.223, 127.186, 37.225, 127.189)).thenReturn(java.util.List.of());
+        Member member = Member.builder().id(11L).username("viewport-user").build();
+        ReflectionTestUtils.setField(member, "id", 11L);
+        MemberDetail detail = new MemberDetail(member);
+        var auth = new UsernamePasswordAuthenticationToken(detail, null, detail.getAuthorities());
+
+        mockMvc.perform(get("/places/kakao-viewport")
+                        .param("minLatitude", "37.223")
+                        .param("minLongitude", "127.186")
+                        .param("maxLatitude", "37.225")
+                        .param("maxLongitude", "127.189")
+                        .with(authentication(auth)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data").isArray());
     }
 
     @Test
