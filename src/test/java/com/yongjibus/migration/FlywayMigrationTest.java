@@ -1,8 +1,10 @@
 package com.yongjibus.migration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.sql.DriverManager;
+import java.sql.SQLException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,14 +16,16 @@ import org.junit.jupiter.params.provider.ValueSource;
 class FlywayMigrationTest {
 
     @Test
-    void seedsEveryInitialTimetableRow() throws Exception {
+    void publishesTheOfficialGiheungTimesInANewRelease() throws Exception {
         Flyway flyway = flyway("jdbc:h2:mem:flyway_timetable_seed;MODE=MySQL;DB_CLOSE_DELAY=-1");
 
         flyway.migrate();
 
         try (var connection = DriverManager.getConnection("jdbc:h2:mem:flyway_timetable_seed;MODE=MySQL;DB_CLOSE_DELAY=-1", "sa", "");
-                var result = connection.createStatement().executeQuery("SELECT payload FROM timetable_release")) {
+                var result = connection.createStatement().executeQuery(
+                        "SELECT version, payload FROM timetable_release ORDER BY version DESC")) {
             assertThat(result.next()).isTrue();
+            assertThat(result.getLong("version")).isEqualTo(2L);
             JsonNode payload = new ObjectMapper().readTree(result.getString("payload"));
             assertThat(payload.get("myongjiWeekday")).hasSize(64);
             assertThat(payload.get("myongjiWeekend")).hasSize(10);
@@ -29,6 +33,11 @@ class FlywayMigrationTest {
             assertThat(payload.get("myongjiWeekday").get(0).get("type").asText()).isEqualTo("명지대역");
             assertThat(payload.get("myongjiWeekday").get(63).get("startTime").asText()).isEqualTo("20:00");
             assertThat(payload.get("giheungWeekday").get(13).get("schoolArrival").asText()).isEqualTo("19:45");
+            assertThat(payload.get("giheungWeekday").get(0).get("startTime").asText()).isEqualTo("-");
+            assertThat(payload.get("giheungWeekday").get(1).get("startTime").asText()).isEqualTo("-");
+            assertThat(result.next()).isTrue();
+            assertThat(result.getLong("version")).isEqualTo(1L);
+            assertThat(result.next()).isFalse();
         }
     }
 
@@ -38,7 +47,7 @@ class FlywayMigrationTest {
 
         flyway.migrate();
 
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("7");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("11");
     }
 
     @ParameterizedTest
@@ -88,9 +97,9 @@ class FlywayMigrationTest {
         }
         try (var connection = DriverManager.getConnection(url, "sa", "");
                 var result = connection.createStatement().executeQuery(
-                        "SELECT version, payload FROM timetable_release")) {
+                        "SELECT version, payload FROM timetable_release ORDER BY version DESC")) {
             assertThat(result.next()).isTrue();
-            assertThat(result.getLong("version")).isEqualTo(1L);
+            assertThat(result.getLong("version")).isEqualTo(2L);
             assertThat(result.getString("payload")).contains("\"myongjiWeekday\"")
                     .contains("\"giheungWeekday\"");
         }
@@ -113,13 +122,48 @@ class FlywayMigrationTest {
                 assertThat(result.getInt(1)).isZero();
             }
         }
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("7");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("11");
+    }
+
+    @Test
+    void upgradesVersionSevenDatabaseWithoutLosingFcmTokens() throws Exception {
+        String url = "jdbc:h2:mem:flyway_v7_upgrade;MODE=MySQL;DB_CLOSE_DELAY=-1";
+        flyway(url, "7").migrate();
+        try (var connection = DriverManager.getConnection(url, "sa", "");
+                var statement = connection.createStatement()) {
+            statement.executeUpdate("""
+                    INSERT INTO member (id, name, username, password, email, is_deleted)
+                    VALUES (1, 'maker', 'maker', 'password', 'maker@example.com', FALSE)
+                    """);
+            statement.executeUpdate("INSERT INTO fcmtoken (token, member_id) VALUES ('legacy-token', 1)");
+        }
+
+        Flyway flyway = flyway(url);
+        flyway.migrate();
+
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("11");
+        try (var connection = DriverManager.getConnection(url, "sa", "");
+                var statement = connection.createStatement()) {
+            try (var result = statement.executeQuery("SELECT token, member_id FROM fcmtoken")) {
+                assertThat(result.next()).isTrue();
+                assertThat(result.getString("token")).isEqualTo("legacy-token");
+                assertThat(result.getLong("member_id")).isEqualTo(1L);
+            }
+            statement.executeUpdate("INSERT INTO fcmtoken (token, member_id) VALUES ('second-token', 1)");
+            try (var result = statement.executeQuery("SELECT COUNT(*) FROM fcmtoken WHERE member_id = 1")) {
+                assertThat(result.next()).isTrue();
+                assertThat(result.getInt(1)).isEqualTo(2);
+            }
+            assertThatThrownBy(() -> statement.executeUpdate(
+                    "INSERT INTO fcmtoken (token, member_id) VALUES ('legacy-token', 1)"))
+                    .isInstanceOf(SQLException.class);
+        }
     }
 
     @Test
     void backfillsLegacyImageRowsBeforeAddingTheThumbnailConstraint() throws Exception {
         String url = "jdbc:h2:mem:flyway_legacy_image;MODE=MySQL;DB_CLOSE_DELAY=-1";
-        flyway(url, "4").migrate();
+        flyway(url, "9").migrate();
         try (var connection = DriverManager.getConnection(url, "sa", "");
                 var statement = connection.createStatement()) {
             statement.executeUpdate("""
