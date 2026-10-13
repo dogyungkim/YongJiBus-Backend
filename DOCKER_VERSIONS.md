@@ -4,6 +4,8 @@
 
 | Date       | Time     | Image                               | Docker Command                 | Platform   | Message |
 |------------|----------|-------------------------------------|----------------------------------|------------|---------|
+| 2026-09-24 | 22:53:53 | `prunsoli/yongji-backend:0.0.26` | `docker buildx build --platform linux/amd64 -t prunsoli/yongji-backend:0.0.26 --push .` | linux/amd64 | feat:timetable by server |
+| 2026-09-11 | 20:04:20 | `prunsoli/yongji-backend:0.0.25` | `docker buildx build --platform linux/amd64 -t prunsoli/yongji-backend:0.0.25 --push .` | linux/amd64 | Manual local deployment |
 | 2026-04-01 | 21:06:52 | `prunsoli/yongji-backend:0.0.5-20260401-210652` | `docker buildx build --platform linux/amd64 -t prunsoli/yongji-backend:0.0.5-20260401-210652 --push .` | linux/amd64 | Manual local deployment |
 | 2025-11-06 | 20:55:10 | `prunsoli/yongji-backend:0.0.24` | `docker buildx build --platform linux/amd64 -t prunsoli/yongji-backend:0.0.24 --push .` | linux/amd64 | 데이터 센터 화재로 인한 관련 API 수정 |
 | 2025-11-06 | 20:40:15 | `prunsoli/yongji-backend:0.0.23` | `docker buildx build --platform linux/amd64 -t prunsoli/yongji-backend:0.0.23 --push .` | linux/amd64 | 만료 Credential 갱신 |
