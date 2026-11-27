@@ -1,5 +1,6 @@
 package com.yongjibus.member.controller;
 
+import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -14,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.yongjibus.auth.domain.MemberDetail;
+import com.yongjibus.auth.service.AuthService;
 import com.yongjibus.member.domain.Member;
 import com.yongjibus.support.ControllerTestSupport;
 
@@ -25,7 +27,7 @@ class MemberControllerTest extends ControllerTestSupport {
 
     @BeforeEach
     void setUp() {
-        mockMvc = createMockMvc(new MemberController());
+        mockMvc = createMockMvc(new MemberController(mock(AuthService.class)));
         member = Member.builder()
                 .name("테스터")
                 .username("tester")

@@ -23,6 +23,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.yongjibus.auth.email.EmailTokenService;
 import com.yongjibus.auth.email.EmailBounceService;
@@ -248,10 +249,13 @@ class AuthServiceTest {
     @Test
     @DisplayName("회원 탈퇴는 모든 기기의 FCM 연결을 해제한다")
     void signoutUnbindsAllTokens() {
+        ReflectionTestUtils.setField(testMember, "id", 1L);
+        when(memberService.getActiveMemberForUpdate(1L)).thenReturn(testMember);
+
         authService.signoutMember(testMember);
 
         verify(fcmTokenService).unbindAllTokens(testMember);
-        verify(memberService).saveMember(testMember);
+        verify(jwtService).deleteRefreshToken(TEST_EMAIL);
         assertThat(testMember.getIsDeleted()).isTrue();
     }
 

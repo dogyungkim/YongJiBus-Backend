@@ -38,6 +38,11 @@ public class MemberService {
             .orElseThrow(() -> new AuthException(ErrorCode.INVALID_CREDENTIALS));
     }
 
+    public Member getActiveMemberForUpdate(Long id) {
+        return memberRepository.findActiveByIdForUpdate(id)
+                .orElseThrow(() -> new AuthException(ErrorCode.MEMBER_DELETED));
+    }
+
     public void validateMemberInfoToSignup(Member member) {
         validateDuplicateEmail(member.getEmail());
         validateDuplicateUsername(member.getUsername());

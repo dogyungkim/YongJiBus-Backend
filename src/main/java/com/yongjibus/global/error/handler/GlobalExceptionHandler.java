@@ -64,7 +64,7 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = invalidFormatException != null && isDateOrTimeType(invalidFormatException.getTargetType())
                 ? ErrorCode.INVALID_DATE_FORMAT
                 : ErrorCode.INVALID_REQUEST;
-        log.error("HttpMessageNotReadableException: {}", e.getMessage());
+        log.error("HttpMessageNotReadableException: {}", errorCode.getMessage());
         return YongJiResponse.error(errorCode.getStatus().value(), errorCode.getMessage());
     }
 

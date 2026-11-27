@@ -89,4 +89,8 @@ public class Member {
     public void delete() {
         this.isDeleted = true;
     }
+
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
 }
