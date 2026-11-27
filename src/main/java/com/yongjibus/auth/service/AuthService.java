@@ -108,6 +108,15 @@ public class AuthService {
         return List.of(accessToken, refreshToken);
     }
 
+    @Transactional
+    public void changePassword(Long memberId, String currentPassword, String newPassword) {
+        Member member = memberService.getActiveMemberForUpdate(memberId);
+        if (!passwordEncoder.matches(currentPassword, member.getPassword())) {
+            throw new AuthException(ErrorCode.INVALID_CURRENT_PASSWORD);
+        }
+        member.changePassword(passwordEncoder.encode(newPassword));
+    }
+
     /**
      * 새로운 회원을 등록합니다.
      * 이메일 인증, 이메일 중복, 사용자명 중복을 검증합니다.
@@ -182,16 +191,14 @@ public class AuthService {
      */
     @Transactional
     public void signoutMember(Member member) {
-        fcmTokenService.unbindAllTokens(member);
+        Member activeMember = memberService.getActiveMemberForUpdate(member.getId());
+        fcmTokenService.unbindAllTokens(activeMember);
 
         // RefreshToken 삭제 (로그아웃 처리)
-        jwtService.deleteRefreshToken(member.getEmail());
+        jwtService.deleteRefreshToken(activeMember.getEmail());
 
         // 회원 상태를 삭제됨으로 변경
-        member.delete();
-
-        // 변경된 회원 정보 저장
-        memberService.saveMember(member);
+        activeMember.delete();
     }
 
     /**
